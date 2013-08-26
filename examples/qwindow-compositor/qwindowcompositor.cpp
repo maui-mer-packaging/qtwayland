@@ -52,6 +52,7 @@
 #include <QPainter>
 
 #include <QtCompositor/qwaylandinput.h>
+#include <QtCompositor/qwaylandoutput.h>
 #include <QtCompositor/qwaylandbufferref.h>
 #include <QtCompositor/qwaylandsurfaceview.h>
 
@@ -105,9 +106,9 @@ public:
     bool ownTexture;
 };
 
-QWindowCompositor::QWindowCompositor(QOpenGLWindow *window)
-    : QWaylandCompositor(window, 0, DefaultExtensions | SubSurfaceExtension)
-    , m_window(window)
+QWindowCompositor::QWindowCompositor()
+    : QWaylandCompositor(0, DefaultExtensions | SubSurfaceExtension)
+    , m_window(0)
     , m_backgroundTexture(0)
     , m_textureBlitter(0)
     , m_renderScheduler(this)
@@ -118,23 +119,8 @@ QWindowCompositor::QWindowCompositor(QOpenGLWindow *window)
     , m_cursorHotspotY(0)
     , m_modifiers(Qt::NoModifier)
 {
-    m_window->makeCurrent();
-
-    m_textureBlitter = new TextureBlitter();
-    m_backgroundImage = makeBackgroundImage(QLatin1String(":/background.jpg"));
-    m_renderScheduler.setSingleShot(true);
-    connect(&m_renderScheduler,SIGNAL(timeout()),this,SLOT(render()));
-
-    QOpenGLFunctions *functions = m_window->context()->functions();
-    functions->glGenFramebuffers(1, &m_surface_fbo);
-
-    window->installEventFilter(this);
-
-    setRetainedSelectionEnabled(true);
-
-    setOutputGeometry(QRect(QPoint(0, 0), window->size()));
-    setOutputRefreshRate(qRound(qGuiApp->primaryScreen()->refreshRate() * 1000.0));
-    addDefaultShell();
+    connect(this, SIGNAL(outputAdded(QWaylandOutput*)),
+            this, SLOT(addOutput(QWaylandOutput*)));
 }
 
 QWindowCompositor::~QWindowCompositor()
@@ -242,6 +228,35 @@ void QWindowCompositor::surfaceCreated(QWaylandSurface *surface)
     surface->setBufferAttacher(new BufferAttacher);
 }
 
+void QWindowCompositor::addOutput(QWaylandOutput *output)
+{
+    if (!output)
+        return;
+
+    if (m_window)
+        return;
+
+    m_window = static_cast<QOpenGLWindow *>(output->window());
+    if (!m_window)
+        return;
+
+    m_window->makeCurrent();
+
+    m_textureBlitter = new TextureBlitter();
+    m_backgroundImage = makeBackgroundImage(QLatin1String(":/background.jpg"));
+    m_renderScheduler.setSingleShot(true);
+    connect(&m_renderScheduler,SIGNAL(timeout()),this,SLOT(render()));
+
+    QOpenGLFunctions *functions = m_window->context()->functions();
+    functions->glGenFramebuffers(1, &m_surface_fbo);
+
+    m_window->installEventFilter(this);
+
+    setRetainedSelectionEnabled(true);
+
+    addDefaultShell();
+}
+
 void QWindowCompositor::sendExpose()
 {
     QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
@@ -313,7 +328,7 @@ void QWindowCompositor::render()
     // Draw the background image texture
     m_textureBlitter->drawTexture(m_backgroundTexture,
                                   QRect(QPoint(0, 0), m_backgroundImage.size()),
-                                  window()->size(),
+                                  m_window->size(),
                                   0, false, true);
 
     foreach (QWaylandSurface *surface, m_surfaces) {

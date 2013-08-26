@@ -45,6 +45,7 @@
 #include <QStringList>
 #include <QScreen>
 #include <QSurfaceFormat>
+#include <QtCompositor/QWaylandOutput>
 
 int main(int argc, char *argv[])
 {
@@ -65,10 +66,12 @@ int main(int argc, char *argv[])
         geom = QRect(screenGeometry.width() / 4, screenGeometry.height() / 4,
                      screenGeometry.width() / 2, screenGeometry.height() / 2);
 
-    QOpenGLWindow window(format, geom);
-    QWindowCompositor compositor(&window);
+    QWindowCompositor *compositor = new QWindowCompositor();
 
-    window.show();
+    QOpenGLWindow *window = new QOpenGLWindow(format, geom);
+    QWaylandOutput *output = new QWaylandOutput(compositor, window);
+    output->setRefreshRate(qRound(screen->refreshRate() * 1000.0));
+    window->show();
 
     return app.exec();
 }

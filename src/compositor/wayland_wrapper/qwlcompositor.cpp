@@ -42,8 +42,8 @@
 #include "qwlcompositor_p.h"
 
 #include "qwaylandinput.h"
+#include "qwaylandoutput.h"
 #include "qwldisplay_p.h"
-#include "qwloutput_p.h"
 #include "qwlsurface_p.h"
 #include "qwaylandclient.h"
 #include "qwaylandcompositor.h"
@@ -113,7 +113,6 @@ Compositor::Compositor(QWaylandCompositor *qt_compositor, QWaylandCompositor::Ex
     , m_current_frame(0)
     , m_last_queued_buf(-1)
     , m_qt_compositor(qt_compositor)
-    , m_orientation(Qt::PrimaryOrientation)
 #if defined (QT_COMPOSITOR_WAYLAND_GL)
     , m_hw_integration(0)
     , m_client_buffer_integration(0)
@@ -147,8 +146,6 @@ void Compositor::init()
 
     wl_display_init_shm(m_display->handle());
 
-    m_output_global = new OutputGlobal(m_display->handle());
-
     if (wl_display_add_socket(m_display->handle(), m_qt_compositor->socketName())) {
         fprintf(stderr, "Fatal: Failed to open server socket\n");
         exit(EXIT_FAILURE);
@@ -170,7 +167,6 @@ void Compositor::init()
     qRegisterMetaType<QWaylandSurfaceView*>("WaylandSurfaceView*");
     //initialize distancefieldglyphcache here
 
-    initializeHardwareIntegration();
     initializeExtensions();
     initializeDefaultInputDevice();
 }
@@ -188,7 +184,6 @@ Compositor::~Compositor()
     delete m_default_wayland_input_device;
     delete m_data_device_manager;
 
-    delete m_output_global;
     delete m_display;
 }
 
@@ -254,11 +249,6 @@ void Compositor::destroyClient(QWaylandClient *client)
     wl_client_destroy(client->client());
 }
 
-QWindow *Compositor::window() const
-{
-    return m_qt_compositor->window();
-}
-
 ClientBufferIntegration * Compositor::clientBufferIntegration() const
 {
 #ifdef QT_COMPOSITOR_WAYLAND_GL
@@ -274,24 +264,6 @@ ServerBufferIntegration * Compositor::serverBufferIntegration() const
     return m_server_buffer_integration.data();
 #else
     return 0;
-#endif
-}
-
-void Compositor::initializeHardwareIntegration()
-{
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-    if (m_extensions & QWaylandCompositor::HardwareIntegrationExtension)
-        m_hw_integration.reset(new HardwareIntegration(this));
-    QWindow *window = m_qt_compositor->window();
-    if (window && window->surfaceType() != QWindow::RasterSurface) {
-        loadClientBufferIntegration();
-        loadServerBufferIntegration();
-    }
-
-    if (m_client_buffer_integration)
-        m_client_buffer_integration->initializeHardware(m_display);
-    if (m_server_buffer_integration)
-        m_server_buffer_integration->initializeHardware(m_qt_compositor);
 #endif
 }
 
@@ -326,43 +298,6 @@ void Compositor::initializeDefaultInputDevice()
 QList<QWaylandClient *> Compositor::clients() const
 {
     return m_clients;
-}
-
-void Compositor::setScreenOrientation(Qt::ScreenOrientation orientation)
-{
-    m_orientation = orientation;
-    m_output_global->sendOutputOrientation(orientation);
-}
-
-Qt::ScreenOrientation Compositor::screenOrientation() const
-{
-    return m_orientation;
-}
-
-void Compositor::setOutputGeometry(const QRect &geometry)
-{
-    if (m_output_global)
-        m_output_global->setGeometry(geometry);
-}
-
-QRect Compositor::outputGeometry() const
-{
-    if (m_output_global)
-        return m_output_global->geometry();
-    return QRect();
-}
-
-void Compositor::setOutputRefreshRate(int rate)
-{
-    if (m_output_global)
-        m_output_global->setRefreshRate(rate);
-}
-
-int Compositor::outputRefreshRate() const
-{
-    if (m_output_global)
-        return m_output_global->refreshRate();
-    return 0;
 }
 
 void Compositor::setClientFullScreenHint(bool value)
@@ -494,6 +429,54 @@ void Compositor::loadServerBufferIntegration()
         if (m_hw_integration)
             m_hw_integration->setServerBufferIntegration(targetKey);
     }
+}
+
+void Compositor::addOutput(QWaylandOutput *output)
+{
+    if (!output)
+        return;
+
+    m_outputs.append(output);
+
+#ifdef QT_COMPOSITOR_WAYLAND_GL
+    if (output->window()) {
+        if (!m_hw_integration) {
+            if (m_extensions & QWaylandCompositor::HardwareIntegrationExtension)
+                m_hw_integration.reset(new HardwareIntegration(this));
+        }
+
+        if (output->window()->surfaceType() == QWindow::RasterSurface) {
+            qFatal("Using raster surface windows is not allowed when OpenGL is enabled");
+        } else {
+            if (!m_client_buffer_integration && !m_server_buffer_integration) {
+                loadClientBufferIntegration();
+                loadServerBufferIntegration();
+
+                if (m_client_buffer_integration)
+                    m_client_buffer_integration->initializeHardware(m_display);
+                if (m_server_buffer_integration)
+                    m_server_buffer_integration->initializeHardware(m_qt_compositor);
+            }
+        }
+    }
+#endif
+
+    Q_EMIT m_qt_compositor->outputAdded(output);
+}
+
+void Compositor::removeOutput(QWaylandOutput *output)
+{
+    m_outputs.removeOne(output);
+
+#ifdef QT_COMPOSITOR_WAYLAND_GL
+    if (m_outputs.size() == 0) {
+        m_client_buffer_integration.reset();
+        m_server_buffer_integration.reset();
+        m_hw_integration.reset();
+    }
+#endif
+
+    Q_EMIT m_qt_compositor->outputRemoved(output);
 }
 
 } // namespace Wayland

@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2014 Jolla Ltd, author: <giulio.camuffo@jollamobile.com>
 ** Contact: http://www.qt-project.org/legal
 **
@@ -53,6 +54,8 @@ class QSGTexture;
 class QWaylandSurfaceItem;
 class QWaylandQuickSurfacePrivate;
 class QWaylandQuickCompositor;
+class QWaylandQuickCompositorPrivate;
+class QWaylandOutput;
 
 class Q_COMPOSITOR_EXPORT QWaylandQuickSurface : public QWaylandSurface
 {
@@ -82,7 +85,9 @@ signals:
 private:
     void updateTexture();
     void invalidateTexture();
+    void outputAdded(QWaylandOutput *output);
 
+    friend class QWaylandQuickCompositorPrivate;
 };
 
 QT_END_NAMESPACE

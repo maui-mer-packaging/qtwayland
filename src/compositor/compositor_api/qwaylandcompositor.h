@@ -60,6 +60,7 @@ class QWaylandInputDevice;
 class QWaylandInputPanel;
 class QWaylandDrag;
 class QWaylandGlobalInterface;
+class QWaylandOutput;
 class QWaylandSurfaceView;
 
 namespace QtWayland
@@ -67,8 +68,9 @@ namespace QtWayland
     class Compositor;
 }
 
-class Q_COMPOSITOR_EXPORT QWaylandCompositor
+class Q_COMPOSITOR_EXPORT QWaylandCompositor : public QObject
 {
+    Q_OBJECT
 public:
     enum ExtensionFlag {
         WindowManagerExtension = 0x01,
@@ -84,12 +86,14 @@ public:
     };
     Q_DECLARE_FLAGS(ExtensionFlags, ExtensionFlag)
 
-    QWaylandCompositor(QWindow *window = 0, const char *socketName = 0, ExtensionFlags extensions = DefaultExtensions);
+    QWaylandCompositor(const char *socketName = 0, ExtensionFlags extensions = DefaultExtensions);
     virtual ~QWaylandCompositor();
 
     void addGlobalInterface(QWaylandGlobalInterface *interface);
     void addDefaultShell();
     ::wl_display *waylandDisplay() const;
+
+    QList<QWaylandOutput *> outputs() const;
 
     void frameStarted();
     void sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces);
@@ -99,8 +103,6 @@ public:
 
     QList<QWaylandSurface *> surfacesForClient(QWaylandClient* client) const;
     QList<QWaylandSurface *> surfaces() const;
-
-    QWindow *window()const;
 
     virtual void surfaceCreated(QWaylandSurface *surface) = 0;
     virtual void surfaceAboutToBeDestroyed(QWaylandSurface *surface);
@@ -119,14 +121,6 @@ public:
     void setClientFullScreenHint(bool value);
 
     const char *socketName() const;
-
-    void setScreenOrientation(Qt::ScreenOrientation orientation);
-
-    void setOutputGeometry(const QRect &outputGeometry);
-    QRect outputGeometry() const;
-
-    void setOutputRefreshRate(int refreshRate);
-    int outputRefreshRate() const;
 
     QWaylandInputDevice *defaultInputDevice() const;
 
@@ -149,15 +143,16 @@ public:
 
     virtual QWaylandSurfaceView *createView(QWaylandSurface *surface);
 
+Q_SIGNALS:
+    void outputAdded(QWaylandOutput *output);
+    void outputRemoved(QWaylandOutput *output);
+
 protected:
-    QWaylandCompositor(QWindow *window, const char *socketName, QtWayland::Compositor *dptr);
+    QWaylandCompositor(const char *socketName, QtWayland::Compositor *dptr);
     virtual void retainedSelectionReceived(QMimeData *mimeData);
 
     friend class QtWayland::Compositor;
     QtWayland::Compositor *m_compositor;
-
-private:
-    QWindow  *m_toplevel_window;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QWaylandCompositor::ExtensionFlags)

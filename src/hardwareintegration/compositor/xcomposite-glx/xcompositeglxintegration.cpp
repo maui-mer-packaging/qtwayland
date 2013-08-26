@@ -40,6 +40,7 @@
 
 #include "xcompositeglxintegration.h"
 
+#include <QtCompositor/qwaylandoutput.h>
 #include <QtCompositor/private/qwlcompositor_p.h>
 #include "wayland-xcomposite-server-protocol.h"
 
@@ -87,9 +88,13 @@ XCompositeGLXClientBufferIntegration::~XCompositeGLXClientBufferIntegration()
 void XCompositeGLXClientBufferIntegration::initializeHardware(QtWayland::Display *)
 {
     qDebug() << "Initializing GLX integration";
+
+    if (m_compositor->outputs().size() < 1)
+        qFatal("No outputs were created by the compositor");
+
     QPlatformNativeInterface *nativeInterface = QGuiApplicationPrivate::platformIntegration()->nativeInterface();
     if (nativeInterface) {
-        mDisplay = static_cast<Display *>(nativeInterface->nativeResourceForWindow("Display",m_compositor->window()));
+        mDisplay = static_cast<Display *>(nativeInterface->nativeResourceForWindow("Display",m_compositor->outputs().at(0)->window()));
         if (!mDisplay)
             qFatal("could not retireve Display from platform integration");
     } else {

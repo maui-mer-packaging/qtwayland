@@ -75,6 +75,8 @@ void tst_WaylandCompositor::singleClient()
 {
     TestCompositor compositor;
 
+    QWaylandOutput output(&compositor, Q_NULLPTR);
+
     MockClient client;
 
     wl_surface *sa = client.createSurface();
@@ -104,6 +106,8 @@ void tst_WaylandCompositor::singleClient()
 void tst_WaylandCompositor::multipleClients()
 {
     TestCompositor compositor;
+
+    QWaylandOutput output(&compositor, Q_NULLPTR);
 
     MockClient a;
     MockClient b;
@@ -143,9 +147,12 @@ void tst_WaylandCompositor::multipleClients()
 void tst_WaylandCompositor::keyboardGrab()
 {
     TestCompositor compositor((QWaylandCompositor::ExtensionFlag)0);
-    MockClient mc;
 
+    QWaylandOutput output(&compositor, Q_NULLPTR);
+
+    MockClient mc;
     mc.createSurface();
+
     // This is needed for timing purposes, otherwise the query for the
     // compositor surfaces will return null
     QTRY_COMPARE(compositor.surfaces.size(), 1);
@@ -192,7 +199,9 @@ void tst_WaylandCompositor::geometry()
     TestCompositor compositor;
 
     QRect geometry(0, 0, 4096, 3072);
-    compositor.setOutputGeometry(geometry);
+
+    QWaylandOutput output(&compositor, Q_NULLPTR);
+    output.setGeometry(geometry);
 
     MockClient client;
 
@@ -202,6 +211,8 @@ void tst_WaylandCompositor::geometry()
 void tst_WaylandCompositor::mapSurface()
 {
     TestCompositor compositor;
+
+    QWaylandOutput output(&compositor, Q_NULLPTR);
 
     MockClient client;
 
@@ -268,6 +279,8 @@ void tst_WaylandCompositor::frameCallback()
 
     TestCompositor compositor;
 
+    QWaylandOutput output(&compositor, Q_NULLPTR);
+
     MockClient client;
 
     wl_surface *surface = client.createSurface();
@@ -306,6 +319,9 @@ void tst_WaylandCompositor::frameCallback()
 void tst_WaylandCompositor::inputDeviceCapabilities()
 {
     TestCompositor compositor;
+
+    QWaylandOutput output(&compositor, Q_NULLPTR);
+
     QtWayland::InputDevice dev(NULL, compositor.handle(), QWaylandInputDevice::Pointer);
 
     QTRY_VERIFY(dev.pointerDevice());

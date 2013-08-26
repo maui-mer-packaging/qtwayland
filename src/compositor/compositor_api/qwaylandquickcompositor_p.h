@@ -40,46 +40,34 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDQUICKCOMPOSITOR_H
-#define QWAYLANDQUICKCOMPOSITOR_H
+#ifndef QWAYLANDQUICKCOMPOSITOR_P_H
+#define QWAYLANDQUICKCOMPOSITOR_P_H
 
-#include <QtQml/QQmlListProperty>
-#include <QtCompositor/qwaylandcompositor.h>
+#include <QtCompositor/qwaylandexport.h>
+#include <QtCompositor/private/qwlcompositor_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QQuickWindow;
-class QWaylandQuickCompositorPrivate;
-class QWaylandQuickSurface;
-class QWaylandSurfaceView;
+class QWaylandOutput;
+class QWaylandQuickCompositor;
 
-struct wl_client;
-
-class Q_COMPOSITOR_EXPORT QWaylandQuickCompositor : public QWaylandCompositor
+class Q_COMPOSITOR_EXPORT QWaylandQuickCompositorPrivate : public QtWayland::Compositor
 {
     Q_OBJECT
-    Q_PROPERTY(QQmlListProperty<QWaylandOutput> outputs READ outputList NOTIFY outputsChanged)
 public:
-    QWaylandQuickCompositor(const char *socketName = 0, QWaylandCompositor::ExtensionFlags extensions = DefaultExtensions);
+    QWaylandQuickCompositorPrivate(QWaylandQuickCompositor *compositor, QWaylandCompositor::ExtensionFlags extensions);
 
-    void update();
+    void compositor_create_surface(Resource *resource, uint32_t id) Q_DECL_OVERRIDE;
 
-    virtual QWaylandQuickSurface *createSurface(wl_client *client, quint32 id);
-    QWaylandSurfaceView *createView(QWaylandSurface *surf) Q_DECL_OVERRIDE;
+    void updateStarted();
 
-    QQmlListProperty<QWaylandOutput> outputList();
+    bool updateScheduled;
 
-    static int outputsCount(QQmlListProperty<QWaylandOutput> *p);
-    static QWaylandOutput *outputAt(QQmlListProperty<QWaylandOutput> *p, int index);
-
-Q_SIGNALS:
-    void outputsChanged();
-
-private:
-    friend class QWaylandQuickCompositorPrivate;
-    QWaylandQuickCompositorPrivate *d_ptr();
+public Q_SLOTS:
+    void outputAdded(QWaylandOutput *output);
+    void outputRemoved(QWaylandOutput *output);
 };
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QWAYLANDQUICKCOMPOSITOR_P_H

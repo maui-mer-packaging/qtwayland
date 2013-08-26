@@ -38,6 +38,8 @@
 **
 ****************************************************************************/
 
+#include <QtCompositor/qwaylandoutput.h>
+
 #include "drmeglserverbufferintegration.h"
 
 #include <QtGui/QOpenGLContext>
@@ -127,7 +129,12 @@ DrmEglServerBufferIntegration::~DrmEglServerBufferIntegration()
 
 void DrmEglServerBufferIntegration::initializeHardware(QWaylandCompositor *compositor)
 {
-    QWindow *window = compositor->window();
+    if (compositor->outputs().size() < 1) {
+        qWarning("No outputs were created by the compositor.\n");
+        return;
+    }
+
+    QWindow *window = compositor->outputs().at(0)->window();
     Q_ASSERT(QGuiApplication::platformNativeInterface());
 
     m_egl_display = static_cast<EGLDisplay>(QGuiApplication::platformNativeInterface()->nativeResourceForWindow("egldisplay", window));

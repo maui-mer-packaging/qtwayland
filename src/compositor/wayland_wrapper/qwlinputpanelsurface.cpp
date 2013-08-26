@@ -77,10 +77,11 @@ void InputPanelSurface::input_panel_surface_set_overlay_panel(Resource *)
     m_type = OverlayPanel;
 }
 
-void InputPanelSurface::input_panel_surface_set_toplevel(Resource *, wl_resource *output, uint32_t position)
+void InputPanelSurface::input_panel_surface_set_toplevel(Resource *, wl_resource *output_resource, uint32_t position)
 {
     m_type = Toplevel;
-    m_output = static_cast<Output *>(Output::Resource::fromResource(output));
+    OutputResource *output = static_cast<OutputResource *>(Output::Resource::fromResource(output_resource));
+    m_output = static_cast<Output *>(output->output_object);
     m_position = static_cast<wl_input_panel_surface::position>(position);
 }
 

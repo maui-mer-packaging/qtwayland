@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
@@ -39,80 +40,223 @@
 ****************************************************************************/
 
 #include "qwloutput_p.h"
+
+#include "qwlcompositor_p.h"
 #include "qwlextendedoutput_p.h"
-#include <QGuiApplication>
-#include <QtGui/QScreen>
+
+#include <QtGui/QWindow>
 #include <QRect>
 
 QT_BEGIN_NAMESPACE
 
 namespace QtWayland {
 
-OutputGlobal::OutputGlobal(struct ::wl_display *display)
-    : QtWaylandServer::wl_output(display)
-    , m_displayId(-1)
-    , m_numQueued(0)
-    , m_transform(WL_OUTPUT_TRANSFORM_NORMAL)
+static QtWaylandServer::wl_output::subpixel toWlSubpixel(const QWaylandOutput::Subpixel &value)
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
-    m_geometry = QRect(QPoint(0, 0), screen->availableGeometry().size());
-    m_refreshRate = qRound(screen->refreshRate() * 1000.0);
+    switch (value) {
+    case QWaylandOutput::SubpixelUnknown:
+        return QtWaylandServer::wl_output::subpixel_unknown;
+    case QWaylandOutput::SubpixelNone:
+        return QtWaylandServer::wl_output::subpixel_none;
+    case QWaylandOutput::SubpixelHorizontalRgb:
+        return QtWaylandServer::wl_output::subpixel_horizontal_rgb;
+    case QWaylandOutput::SubpixelHorizontalBgr:
+        return QtWaylandServer::wl_output::subpixel_horizontal_bgr;
+    case QWaylandOutput::SubpixelVerticalRgb:
+        return QtWaylandServer::wl_output::subpixel_vertical_rgb;
+    case QWaylandOutput::SubpixelVerticalBgr:
+        return QtWaylandServer::wl_output::subpixel_vertical_bgr;
+    default:
+        break;
+    }
+
+    return QtWaylandServer::wl_output::subpixel_unknown;
 }
 
-OutputGlobal::~OutputGlobal()
+static QtWaylandServer::wl_output::transform toWlTransform(const QWaylandOutput::Transform &value)
+{
+    switch (value) {
+    case QWaylandOutput::Transform90:
+        return QtWaylandServer::wl_output::transform_90;
+    case QWaylandOutput::Transform180:
+        return QtWaylandServer::wl_output::transform_180;
+    case QWaylandOutput::Transform270:
+        return QtWaylandServer::wl_output::transform_270;
+    case QWaylandOutput::TransformFlipped:
+        return QtWaylandServer::wl_output::transform_flipped;
+    case QWaylandOutput::TransformFlipped90:
+        return QtWaylandServer::wl_output::transform_flipped_90;
+    case QWaylandOutput::TransformFlipped180:
+        return QtWaylandServer::wl_output::transform_flipped_180;
+    case QWaylandOutput::TransformFlipped270:
+        return QtWaylandServer::wl_output::transform_flipped_270;
+    default:
+        break;
+    }
+
+    return QtWaylandServer::wl_output::transform_normal;
+}
+
+Output::Output(Compositor *compositor, QWindow *window)
+    : QtWaylandServer::wl_output(compositor->wl_display())
+    , m_compositor(compositor)
+    , m_window(window)
+    , m_output(Q_NULLPTR)
+    , m_geometry(QPoint(), window ? window->size() : QSize())
+    , m_availableGeometry(QRect())
+    , m_refreshRate(60000)
+    , m_physicalSize(QSize())
+    , m_subpixel(QWaylandOutput::SubpixelUnknown)
+    , m_transform(QWaylandOutput::TransformNormal)
+    , m_scaleFactor(1)
 {
 }
 
-void OutputGlobal::output_bind_resource(Resource *resource)
+void Output::output_bind_resource(Resource *resource)
 {
-    wl_output_send_geometry(resource->handle, 0, 0,
-                            size().width(), size().height(), 0, "", "", m_transform);
+    send_geometry(resource->handle,
+                  m_geometry.x(), m_geometry.y(),
+                  m_physicalSize.width(), m_physicalSize.height(),
+                  toWlSubpixel(m_subpixel), m_manufacturer, m_model,
+                  toWlTransform(m_transform));
 
-    wl_output_send_mode(resource->handle, WL_OUTPUT_MODE_CURRENT|WL_OUTPUT_MODE_PREFERRED,
-                        size().width(), size().height(), refreshRate());
+    send_mode(resource->handle, mode_current | mode_preferred,
+              m_geometry.width(), m_geometry.height(), m_refreshRate);
+
+    send_scale(resource->handle, m_scaleFactor);
+
+    send_done(resource->handle);
 }
 
-void OutputGlobal::setGeometry(const QRect &geometry)
+void Output::setManufacturer(const QString &manufacturer)
 {
+    if (m_manufacturer != manufacturer) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.x(),
+                          m_physicalSize.width(), m_physicalSize.height(),
+                          toWlSubpixel(m_subpixel), manufacturer, m_model,
+                          toWlTransform(m_transform));
+        }
+    }
+
+    m_manufacturer = manufacturer;
+}
+
+void Output::setModel(const QString &model)
+{
+    if (m_model != model) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.x(),
+                          m_physicalSize.width(), m_physicalSize.height(),
+                          toWlSubpixel(m_subpixel), m_manufacturer, model,
+                          toWlTransform(m_transform));
+            send_done(resource->handle);
+        }
+    }
+
+    m_model = model;
+}
+
+void Output::setGeometry(const QRect &geometry)
+{
+    if (m_geometry != geometry) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.y(),
+                          m_physicalSize.width(), m_physicalSize.height(),
+                          toWlSubpixel(m_subpixel), m_manufacturer, m_model,
+                          toWlTransform(m_transform));
+            send_mode(resource->handle, mode_current,
+                      geometry.width(), geometry.height(),
+                      m_refreshRate);
+            send_done(resource->handle);
+        }
+    }
+
     m_geometry = geometry;
 }
 
-void OutputGlobal::setRefreshRate(int rate)
+void Output::setAvailableGeometry(const QRect &availableGeometry)
 {
+    m_availableGeometry = availableGeometry;
+}
+
+void Output::setRefreshRate(int rate)
+{
+    if (m_refreshRate != rate) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_mode(resource->handle, mode_current,
+                      m_geometry.width(), m_geometry.height(), rate);
+            send_done(resource->handle);
+        }
+    }
+
     m_refreshRate = rate;
 }
 
-void OutputGlobal::sendOutputOrientation(Qt::ScreenOrientation orientation)
+void Output::setPhysicalSize(const QSize &physicalSize)
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
-    bool isPortrait = screen->primaryOrientation() == Qt::PortraitOrientation;
-    switch (orientation) {
-        case Qt::PrimaryOrientation:
-            m_transform = WL_OUTPUT_TRANSFORM_NORMAL;
-            break;
-        case Qt::PortraitOrientation:
-            m_transform = isPortrait ? WL_OUTPUT_TRANSFORM_NORMAL : WL_OUTPUT_TRANSFORM_90;
-            break;
-        case Qt::LandscapeOrientation:
-            m_transform = isPortrait ? WL_OUTPUT_TRANSFORM_270 : WL_OUTPUT_TRANSFORM_NORMAL;
-            break;
-        case Qt::InvertedPortraitOrientation:
-            m_transform = isPortrait ? WL_OUTPUT_TRANSFORM_180 : WL_OUTPUT_TRANSFORM_270;
-            break;
-        case Qt::InvertedLandscapeOrientation:
-            m_transform = isPortrait ? WL_OUTPUT_TRANSFORM_90 : WL_OUTPUT_TRANSFORM_180;
-            break;
+    if (m_physicalSize != physicalSize) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.x(),
+                          physicalSize.width(), physicalSize.height(),
+                          toWlSubpixel(m_subpixel), m_manufacturer, m_model,
+                          toWlTransform(m_transform));
+            send_done(resource->handle);
+        }
     }
 
-    foreach (Resource *res, resourceMap()) {
-        wl_output_send_geometry(res->handle, 0, 0,
-                                size().width(), size().height(), 0, "", "", m_transform);
-    }
+    m_physicalSize = physicalSize;
 }
 
-Output *OutputGlobal::outputForClient(wl_client *client) const
+void Output::setSubpixel(const QWaylandOutput::Subpixel &subpixel)
 {
-    return static_cast<Output *>(resourceMap().value(client));
+    if (m_subpixel != subpixel) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.x(),
+                          m_physicalSize.width(), m_physicalSize.height(),
+                          toWlSubpixel(subpixel), m_manufacturer, m_model,
+                          toWlTransform(m_transform));
+            send_done(resource->handle);
+        }
+    }
+
+    m_subpixel = subpixel;
+}
+
+void Output::setTransform(const QWaylandOutput::Transform &transform)
+{
+    if (m_transform != transform) {
+        Q_FOREACH (Resource *resource, resourceMap().values()) {
+            send_geometry(resource->handle,
+                          m_geometry.x(), m_geometry.x(),
+                          m_physicalSize.width(), m_physicalSize.height(),
+                          toWlSubpixel(m_subpixel), m_manufacturer, m_model,
+                          toWlTransform(transform));
+            send_done(resource->handle);
+        }
+    }
+
+    m_transform = transform;
+}
+
+void Output::setScaleFactor(int scale)
+{
+    if (m_scaleFactor != scale) {
+        Q_FOREACH (Resource *resource, resourceMap().values())
+            send_scale(resource->handle, scale);
+    }
+
+    m_scaleFactor = scale;
+}
+
+OutputResource *Output::outputForClient(wl_client *client) const
+{
+    return static_cast<OutputResource *>(resourceMap().value(client));
 }
 
 } // namespace Wayland

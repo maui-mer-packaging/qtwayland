@@ -61,6 +61,7 @@ class QWaylandClient;
 class QWaylandClientPrivate;
 class QWaylandCompositor;
 class QWaylandInputDevice;
+class QWaylandOutput;
 class WindowManagerServerIntegration;
 class QMimeData;
 class QPlatformScreenBuffer;
@@ -72,7 +73,7 @@ class Surface;
 class SurfaceBuffer;
 class InputDevice;
 class DataDeviceManager;
-class OutputGlobal;
+class Output;
 class OutputExtensionGlobal;
 class SurfaceExtensionGlobal;
 class SubSurfaceExtensionGlobal;
@@ -104,11 +105,8 @@ public:
 
     uint currentTimeMsecs() const;
 
-    QWindow *window() const;
-
     ClientBufferIntegration *clientBufferIntegration() const;
     ServerBufferIntegration *serverBufferIntegration() const;
-    void initializeHardwareIntegration();
     void initializeExtensions();
     void initializeDefaultInputDevice();
     void initializeWindowManagerProtocol();
@@ -125,13 +123,6 @@ public:
     QList<QWaylandClient *> clients() const;
 
     WindowManagerServerIntegration *windowManagerIntegration() const { return m_windowManagerIntegration; }
-
-    void setScreenOrientation(Qt::ScreenOrientation orientation);
-    Qt::ScreenOrientation screenOrientation() const;
-    void setOutputGeometry(const QRect &geometry);
-    QRect outputGeometry() const;
-    void setOutputRefreshRate(int rate);
-    int outputRefreshRate() const;
 
     void setClientFullScreenHint(bool value);
 
@@ -179,8 +170,7 @@ protected:
     InputDevice *m_default_input_device;
 
     /* Output */
-    //make this a list of the available screens
-    OutputGlobal *m_output_global;
+    QList<QWaylandOutput *> m_outputs;
 
     DataDeviceManager *m_data_device_manager;
 
@@ -224,6 +214,10 @@ protected:
     friend class QT_PREPEND_NAMESPACE(QWaylandCompositor);
     friend class QT_PREPEND_NAMESPACE(QWaylandClient);
     friend class QT_PREPEND_NAMESPACE(QWaylandClientPrivate);
+    friend class QT_PREPEND_NAMESPACE(QWaylandOutput);
+
+    void addOutput(QWaylandOutput *output);
+    void removeOutput(QWaylandOutput *output);
 };
 
 }

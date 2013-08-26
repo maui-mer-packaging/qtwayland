@@ -38,6 +38,8 @@
 **
 ****************************************************************************/
 
+#include <QtCompositor/qwaylandoutput.h>
+
 #include "xcompositehandler.h"
 
 #include "wayland-xcomposite-server-protocol.h"
@@ -50,9 +52,12 @@ QT_BEGIN_NAMESPACE
 XCompositeHandler::XCompositeHandler(QtWayland::Compositor *compositor, Display *display)
     : QtWaylandServer::qt_xcomposite(compositor->wl_display())
 {
-    compositor->window()->create();
+    if (compositor->waylandCompositor()->outputs().size() < 1)
+        qFatal("No outputs were created by the compositor");
 
-    mFakeRootWindow = new QWindow(compositor->window());
+    compositor->waylandCompositor()->outputs().at(0)->window()->create();
+
+    mFakeRootWindow = new QWindow(compositor->waylandCompositor()->outputs().at(0)->window());
     mFakeRootWindow->setGeometry(QRect(-1,-1,1,1));
     mFakeRootWindow->create();
     mFakeRootWindow->show();
