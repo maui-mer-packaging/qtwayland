@@ -49,6 +49,7 @@
 #include "wayland_wrapper/qwlsurface_p.h"
 #include "wayland_wrapper/qwlinputdevice_p.h"
 #include "wayland_wrapper/qwlinputpanel_p.h"
+#include "wayland_wrapper/qwloutput_p.h"
 #include "wayland_wrapper/qwlshellsurface_p.h"
 
 #include <QtCore/QCoreApplication>
@@ -60,17 +61,15 @@
 
 QT_BEGIN_NAMESPACE
 
-QWaylandCompositor::QWaylandCompositor(QWindow *window, const char *socketName, ExtensionFlags extensions)
+QWaylandCompositor::QWaylandCompositor(const char *socketName, ExtensionFlags extensions)
     : m_compositor(new QtWayland::Compositor(this, extensions))
-    , m_toplevel_window(window)
 {
     m_compositor->m_socket_name = socketName;
     m_compositor->init();
 }
 
-QWaylandCompositor::QWaylandCompositor(QWindow *window, const char *socketName, QtWayland::Compositor *dptr)
+QWaylandCompositor::QWaylandCompositor(const char *socketName, QtWayland::Compositor *dptr)
     : m_compositor(dptr)
-    , m_toplevel_window(window)
 {
     m_compositor->m_socket_name = socketName;
     m_compositor->init();
@@ -96,6 +95,11 @@ void QWaylandCompositor::addDefaultShell()
 struct wl_display *QWaylandCompositor::waylandDisplay() const
 {
     return m_compositor->wl_display();
+}
+
+QList<QWaylandOutput *> QWaylandCompositor::outputs() const
+{
+    return m_compositor->m_outputs;
 }
 
 void QWaylandCompositor::sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces)
@@ -141,11 +145,6 @@ QList<QWaylandSurface *> QWaylandCompositor::surfaces() const
     foreach (QtWayland::Surface *s, surfaces)
         surfs << s->waylandSurface();
     return surfs;
-}
-
-QWindow * QWaylandCompositor::window() const
-{
-    return m_toplevel_window;
 }
 
 void QWaylandCompositor::cleanupGraphicsResources()
@@ -219,34 +218,6 @@ const char *QWaylandCompositor::socketName() const
     if (m_compositor->m_socket_name.isEmpty())
         return 0;
     return m_compositor->m_socket_name.constData();
-}
-
-/*!
-  Set the screen orientation based on accelerometer data or similar.
-*/
-void QWaylandCompositor::setScreenOrientation(Qt::ScreenOrientation orientation)
-{
-    m_compositor->setScreenOrientation(orientation);
-}
-
-void QWaylandCompositor::setOutputGeometry(const QRect &geometry)
-{
-    m_compositor->setOutputGeometry(geometry);
-}
-
-QRect QWaylandCompositor::outputGeometry() const
-{
-    return m_compositor->outputGeometry();
-}
-
-void QWaylandCompositor::setOutputRefreshRate(int rate)
-{
-    m_compositor->setOutputRefreshRate(rate);
-}
-
-int QWaylandCompositor::outputRefreshRate() const
-{
-    return m_compositor->outputRefreshRate();
 }
 
 QWaylandInputDevice *QWaylandCompositor::defaultInputDevice() const

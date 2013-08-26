@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2014 Jolla Ltd, author: <giulio.camuffo@jollamobile.com>
 ** Contact: http://www.qt-project.org/legal
 **
@@ -49,6 +50,7 @@
 #include "qwaylandquickcompositor.h"
 #include "qwaylandsurfaceitem.h"
 #include <QtCompositor/qwaylandbufferref.h>
+#include <QtCompositor/qwaylandoutput.h>
 #include <QtCompositor/private/qwaylandsurface_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -84,7 +86,17 @@ public:
             bufferRef.destroyTexture();
         bufferRef = nextBuffer;
 
-        QQuickWindow *window = static_cast<QQuickWindow *>(surface->compositor()->window());
+        if (surface->compositor()->outputs().size() == 0) {
+            update = false;
+            return;
+        }
+
+        QQuickWindow *window = qobject_cast<QQuickWindow *>(surface->compositor()->outputs().at(0)->window());
+        if (!window) {
+            update = false;
+            return;
+        }
+
         // If the next buffer is NULL do not delete the current texture. If the client called
         // attach(0) the surface is going to be unmapped anyway, if instead the client attached
         // a valid buffer but died before we got here we want to keep the old buffer around
@@ -165,12 +177,13 @@ QWaylandQuickSurface::QWaylandQuickSurface(wl_client *client, quint32 id, QWayla
     d->buffer->surface = this;
     setBufferAttacher(d->buffer);
 
-    QQuickWindow *window = static_cast<QQuickWindow *>(compositor->window());
-    connect(window, &QQuickWindow::beforeSynchronizing, this, &QWaylandQuickSurface::updateTexture, Qt::DirectConnection);
-    connect(window, &QQuickWindow::sceneGraphInvalidated, this, &QWaylandQuickSurface::invalidateTexture, Qt::DirectConnection);
     connect(this, &QWaylandSurface::windowPropertyChanged, d->windowPropertyMap, &QQmlPropertyMap::insert);
     connect(d->windowPropertyMap, &QQmlPropertyMap::valueChanged, this, &QWaylandSurface::setWindowProperty);
 
+    Q_FOREACH (QWaylandOutput *output, compositor->outputs())
+        outputAdded(output);
+
+    connect(compositor, &QWaylandQuickCompositor::outputAdded, this, &QWaylandQuickSurface::outputAdded);
 }
 
 QWaylandQuickSurface::~QWaylandQuickSurface()
@@ -218,6 +231,20 @@ void QWaylandQuickSurface::invalidateTexture()
 {
     Q_D(QWaylandQuickSurface);
     d->buffer->invalidateTexture();
+}
+
+void QWaylandQuickSurface::outputAdded(QWaylandOutput *output)
+{
+    QQuickWindow *window = qobject_cast<QQuickWindow *>(output->window());
+    if (!window)
+        return;
+
+    connect(window, &QQuickWindow::beforeSynchronizing,
+            this, &QWaylandQuickSurface::updateTexture,
+            Qt::DirectConnection);
+    connect(window, &QQuickWindow::sceneGraphInvalidated,
+            this, &QWaylandQuickSurface::invalidateTexture,
+            Qt::DirectConnection);
 }
 
 bool QWaylandQuickSurface::clientRenderingEnabled() const

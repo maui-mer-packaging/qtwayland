@@ -56,7 +56,7 @@ OutputExtensionGlobal::OutputExtensionGlobal(Compositor *compositor)
 
 void OutputExtensionGlobal::output_extension_get_extended_output(qt_output_extension::Resource *resource, uint32_t id, wl_resource *output_resource)
 {
-    Output *output = static_cast<Output *>(OutputGlobal::Resource::fromResource(output_resource));
+    OutputResource *output = static_cast<OutputResource *>(Output::Resource::fromResource(output_resource));
     Q_ASSERT(output->extendedOutput == 0);
 
     ExtendedOutput *extendedOutput = static_cast<ExtendedOutput *>(qt_extended_output::add(resource->client(), id));

@@ -40,56 +40,34 @@
 **
 ****************************************************************************/
 
-#ifndef QQUICKWAYLANDSURFACE_H
-#define QQUICKWAYLANDSURFACE_H
+#ifndef QWAYLANDQUICKCOMPOSITOR_P_H
+#define QWAYLANDQUICKCOMPOSITOR_P_H
 
-#include <QtCompositor/qwaylandsurface.h>
-
-struct wl_client;
+#include <QtCompositor/qwaylandexport.h>
+#include <QtCompositor/private/qwlcompositor_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QSGTexture;
-
-class QWaylandSurfaceItem;
-class QWaylandQuickSurfacePrivate;
-class QWaylandQuickCompositor;
-class QWaylandQuickCompositorPrivate;
 class QWaylandOutput;
+class QWaylandQuickCompositor;
 
-class Q_COMPOSITOR_EXPORT QWaylandQuickSurface : public QWaylandSurface
+class Q_COMPOSITOR_EXPORT QWaylandQuickCompositorPrivate : public QtWayland::Compositor
 {
     Q_OBJECT
-    Q_DECLARE_PRIVATE(QWaylandQuickSurface)
-    Q_PROPERTY(bool useTextureAlpha READ useTextureAlpha WRITE setUseTextureAlpha NOTIFY useTextureAlphaChanged)
-    Q_PROPERTY(bool clientRenderingEnabled READ clientRenderingEnabled WRITE setClientRenderingEnabled NOTIFY clientRenderingEnabledChanged)
-    Q_PROPERTY(QObject *windowProperties READ windowPropertyMap CONSTANT)
 public:
-    QWaylandQuickSurface(wl_client *client, quint32 id, QWaylandQuickCompositor *compositor);
-    ~QWaylandQuickSurface();
+    QWaylandQuickCompositorPrivate(QWaylandQuickCompositor *compositor, QWaylandCompositor::ExtensionFlags extensions);
 
-    QSGTexture *texture() const;
+    void compositor_create_surface(Resource *resource, uint32_t id) Q_DECL_OVERRIDE;
 
-    bool useTextureAlpha() const;
-    void setUseTextureAlpha(bool useTextureAlpha);
+    void updateStarted();
 
-    bool clientRenderingEnabled() const;
-    void setClientRenderingEnabled(bool enabled);
+    bool updateScheduled;
 
-    QObject *windowPropertyMap() const;
-
-Q_SIGNALS:
-    void useTextureAlphaChanged();
-    void clientRenderingEnabledChanged();
-
-private:
-    void updateTexture();
-    void invalidateTexture();
+public Q_SLOTS:
     void outputAdded(QWaylandOutput *output);
-
-    friend class QWaylandQuickCompositorPrivate;
+    void outputRemoved(QWaylandOutput *output);
 };
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QWAYLANDQUICKCOMPOSITOR_P_H

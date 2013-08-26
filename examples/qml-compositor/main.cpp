@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
@@ -41,35 +42,31 @@
 #include "qwaylandquickcompositor.h"
 #include "qwaylandquicksurface.h"
 
+#include <QtCompositor/qwaylandoutput.h>
 #include <QtCompositor/qwaylandsurfaceitem.h>
 
 #include <QGuiApplication>
 #include <QTimer>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QScreen>
 
 #include <QQmlContext>
 
 #include <QQuickItem>
 #include <QQuickView>
 
-class QmlCompositor : public QQuickView, public QWaylandQuickCompositor
+class QmlCompositor : public QWaylandQuickCompositor
 {
     Q_OBJECT
     Q_PROPERTY(QWaylandQuickSurface* fullscreenSurface READ fullscreenSurface WRITE setFullscreenSurface NOTIFY fullscreenSurfaceChanged)
 
 public:
     QmlCompositor()
-        : QWaylandQuickCompositor(this, 0, DefaultExtensions | SubSurfaceExtension)
+        : QWaylandQuickCompositor(0, DefaultExtensions | SubSurfaceExtension)
         , m_fullscreenSurface(0)
     {
-        setSource(QUrl("main.qml"));
-        setResizeMode(QQuickView::SizeRootObjectToView);
-        setColor(Qt::black);
-        winId();
         addDefaultShell();
-
-        connect(this, SIGNAL(afterRendering()), this, SLOT(sendCallbacks()));
     }
 
     QWaylandQuickSurface *fullscreenSurface() const
@@ -100,6 +97,13 @@ public slots:
         emit fullscreenSurfaceChanged();
     }
 
+    void sendCallbacks() {
+        if (m_fullscreenSurface)
+            sendFrameCallbacks(QList<QWaylandSurface *>() << m_fullscreenSurface);
+        else
+            sendFrameCallbacks(surfaces());
+    }
+
 private slots:
     void surfaceMapped() {
         QWaylandQuickSurface *surface = qobject_cast<QWaylandQuickSurface *>(sender());
@@ -119,20 +123,7 @@ private slots:
         emit windowDestroyed(QVariant::fromValue(surface));
     }
 
-    void sendCallbacks() {
-        if (m_fullscreenSurface)
-            sendFrameCallbacks(QList<QWaylandSurface *>() << m_fullscreenSurface);
-        else
-            sendFrameCallbacks(surfaces());
-    }
-
 protected:
-    void resizeEvent(QResizeEvent *event)
-    {
-        QQuickView::resizeEvent(event);
-        QWaylandCompositor::setOutputGeometry(QRect(0, 0, width(), height()));
-    }
-
     void surfaceCreated(QWaylandSurface *surface) {
         connect(surface, SIGNAL(destroyed(QObject *)), this, SLOT(surfaceDestroyed(QObject *)));
         connect(surface, SIGNAL(mapped()), this, SLOT(surfaceMapped()));
@@ -143,19 +134,53 @@ private:
     QWaylandQuickSurface *m_fullscreenSurface;
 };
 
+class QmlWindow : public QQuickView
+{
+    Q_OBJECT
+
+public:
+    QmlWindow(QmlCompositor *compositor)
+        : QQuickView()
+        , m_compositor(compositor)
+    {
+        setSource(QUrl("main.qml"));
+        setResizeMode(QQuickView::SizeRootObjectToView);
+        setColor(Qt::black);
+        winId();
+
+        connect(this, SIGNAL(afterRendering()), m_compositor, SLOT(sendCallbacks()));
+    }
+
+private:
+    QmlCompositor *m_compositor;
+};
+
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    QmlCompositor compositor;
-    compositor.setTitle(QLatin1String("QML Compositor"));
-    compositor.setGeometry(0, 0, 1024, 768);
-    compositor.show();
+    QmlCompositor *compositor = new QmlCompositor();
 
-    compositor.rootContext()->setContextProperty("compositor", &compositor);
+    QmlWindow *window = new QmlWindow(compositor);
+    window->setTitle(QLatin1String("QML Compositor"));
+    window->setGeometry(QRect(0, 0, 1024, 768));
+    window->setMinimumSize(window->geometry().size());
+    window->setMaximumSize(window->minimumSize());
+    window->rootContext()->setContextProperty("compositor", compositor);
 
-    QObject::connect(&compositor, SIGNAL(windowAdded(QVariant)), compositor.rootObject(), SLOT(windowAdded(QVariant)));
-    QObject::connect(&compositor, SIGNAL(windowResized(QVariant)), compositor.rootObject(), SLOT(windowResized(QVariant)));
+    QObject::connect(compositor, SIGNAL(windowAdded(QVariant)),
+                     window->rootObject(), SLOT(windowAdded(QVariant)));
+    QObject::connect(compositor, SIGNAL(windowResized(QVariant)),
+                     window->rootObject(), SLOT(windowResized(QVariant)));
+
+    QWaylandOutput *output = new QWaylandOutput(compositor, window,
+                                                QStringLiteral("QtCompositor"),
+                                                QStringLiteral("QmlCompositor Output"));
+    output->setRefreshRate(60000);
+
+    window->rootContext()->setContextProperty("output", output);
+
+    window->show();
 
     return app.exec();
 }

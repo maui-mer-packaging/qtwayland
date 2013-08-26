@@ -2,12 +2,13 @@ INCLUDEPATH += compositor_api
 
 HEADERS += \
     compositor_api/qwaylandcompositor.h \
-    compositor_api/qwaylandcompositor_p.h \
     compositor_api/qwaylandclient.h \
     compositor_api/qwaylandsurface.h \
     compositor_api/qwaylandsurface_p.h \
     compositor_api/qwaylandinput.h \
     compositor_api/qwaylandinputpanel.h \
+    compositor_api/qwaylandoutput.h \
+    compositor_api/qwaylandoutput_p.h \
     compositor_api/qwaylanddrag.h \
     compositor_api/qwaylandbufferref.h \
     compositor_api/qwaylandsurfaceview.h \
@@ -20,6 +21,7 @@ SOURCES += \
     compositor_api/qwaylandsurface.cpp \
     compositor_api/qwaylandinput.cpp \
     compositor_api/qwaylandinputpanel.cpp \
+    compositor_api/qwaylandoutput.cpp \
     compositor_api/qwaylanddrag.cpp \
     compositor_api/qwaylandbufferref.cpp \
     compositor_api/qwaylandsurfaceview.cpp \
@@ -36,6 +38,7 @@ qtHaveModule(quick) {
 
     HEADERS += \
         compositor_api/qwaylandquickcompositor.h \
+        compositor_api/qwaylandquickcompositor_p.h \
         compositor_api/qwaylandquicksurface.h \
         compositor_api/qwaylandsurfaceitem.h
 

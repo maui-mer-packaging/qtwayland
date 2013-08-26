@@ -42,6 +42,7 @@
 
 #include <QtCompositor/private/qwlcompositor_p.h>
 #include <QtCompositor/private/qwlsurface_p.h>
+#include <QtCompositor/qwaylandoutput.h>
 #include <qpa/qplatformnativeinterface.h>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QOpenGLContext>
@@ -119,7 +120,12 @@ void WaylandEglClientBufferIntegration::initializeHardware(QtWayland::Display *w
         return;
     }
 
-    d->egl_display = nativeInterface->nativeResourceForWindow("EglDisplay", m_compositor->window());
+    if (m_compositor->outputs().size() < 1) {
+        qWarning("Failed to initialize egl display. No outputs were created by the compositor.\n");
+        return;
+    }
+
+    d->egl_display = nativeInterface->nativeResourceForWindow("EglDisplay", m_compositor->outputs().at(0)->window());
     if (!d->egl_display) {
         qWarning("QtCompositor: Failed to initialize EGL display. Could not get EglDisplay for window.");
         return;

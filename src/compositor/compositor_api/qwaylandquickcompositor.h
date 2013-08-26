@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2014 Jolla Ltd, author: <giulio.camuffo@jollamobile.com>
 ** Contact: http://www.qt-project.org/legal
 **
@@ -42,22 +43,39 @@
 #ifndef QWAYLANDQUICKCOMPOSITOR_H
 #define QWAYLANDQUICKCOMPOSITOR_H
 
+#include <QtQml/QQmlListProperty>
 #include <QtCompositor/qwaylandcompositor.h>
 
 QT_BEGIN_NAMESPACE
 
 class QQuickWindow;
 class QWaylandQuickCompositorPrivate;
+class QWaylandQuickSurface;
 class QWaylandSurfaceView;
+
+struct wl_client;
 
 class Q_COMPOSITOR_EXPORT QWaylandQuickCompositor : public QWaylandCompositor
 {
+    Q_OBJECT
+    Q_PROPERTY(QQmlListProperty<QWaylandOutput> outputs READ outputList NOTIFY outputsChanged)
 public:
-    QWaylandQuickCompositor(QQuickWindow *window = 0, const char *socketName = 0, QWaylandCompositor::ExtensionFlags extensions = DefaultExtensions);
+    QWaylandQuickCompositor(const char *socketName = 0, QWaylandCompositor::ExtensionFlags extensions = DefaultExtensions);
 
     void update();
 
     QWaylandSurfaceView *createView(QWaylandSurface *surf) Q_DECL_OVERRIDE;
+
+    QQmlListProperty<QWaylandOutput> outputList();
+
+    static int outputsCount(QQmlListProperty<QWaylandOutput> *p);
+    static QWaylandOutput *outputAt(QQmlListProperty<QWaylandOutput> *p, int index);
+
+protected:
+    virtual QWaylandQuickSurface *createSurface(wl_client *client, quint32 id);
+
+Q_SIGNALS:
+    void outputsChanged();
 
 private:
     friend class QWaylandQuickCompositorPrivate;

@@ -42,6 +42,7 @@
 
 #include "wayland-xcomposite-server-protocol.h"
 
+#include <QtCompositor/qwaylandoutput.h>
 #include <QtCompositor/private/qwlcompositor_p.h>
 #include <QtGui/QGuiApplication>
 #include <qpa/qplatformnativeinterface.h>
@@ -78,10 +79,13 @@ void XCompositeEglClientBufferIntegration::initializeHardware(QtWayland::Display
 {
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
     if (nativeInterface) {
-        mDisplay = static_cast<Display *>(nativeInterface->nativeResourceForWindow("Display",m_compositor->window()));
+        if (m_compositor->outputs().size() < 1)
+            qFatal("No outputs were created by the compositor");
+
+        mDisplay = static_cast<Display *>(nativeInterface->nativeResourceForWindow("Display",m_compositor->outputs().at(0)->window()));
         if (!mDisplay)
             qFatal("could not retireve Display from platform integration");
-        mEglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForWindow("EGLDisplay",m_compositor->window()));
+        mEglDisplay = static_cast<EGLDisplay>(nativeInterface->nativeResourceForWindow("EGLDisplay",m_compositor->outputs().at(0)->window()));
         if (!mEglDisplay)
             qFatal("could not retrieve EGLDisplay from platform integration");
     } else {

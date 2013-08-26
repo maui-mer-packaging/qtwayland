@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the Qt Compositor.
@@ -38,81 +38,28 @@
 **
 ****************************************************************************/
 
-#ifndef QWINDOWCOMPOSITOR_H
-#define QWINDOWCOMPOSITOR_H
+#ifndef QWAYLANDOUTPUT_P_H
+#define QWAYLANDOUTPUT_P_H
 
-#include "qwaylandcompositor.h"
-#include "qwaylandsurface.h"
-#include "textureblitter.h"
-#include "compositorwindow.h"
+#include <QtCompositor/qwaylandexport.h>
+#include <private/qobject_p.h>
 
-#include <QtGui/private/qopengltexturecache_p.h>
-#include <QObject>
-#include <QTimer>
+#include "wayland_wrapper/qwlcompositor_p.h"
+#include "wayland_wrapper/qwloutput_p.h"
 
 QT_BEGIN_NAMESPACE
 
-class QWaylandSurfaceView;
-class QOpenGLTexture;
+class QWaylandCompositor;
+class QWaylandOutput;
+class QWindow;
 
-class QWindowCompositor : public QWaylandCompositor
+class Q_COMPOSITOR_EXPORT QWaylandOutputPrivate : public QObjectPrivate, public QtWayland::Output
 {
-    Q_OBJECT
+    Q_DECLARE_PUBLIC(QWaylandOutput)
 public:
-    QWindowCompositor();
-    ~QWindowCompositor();
-
-private slots:
-    void surfaceDestroyed();
-    void surfaceMapped();
-    void surfaceUnmapped();
-    void surfaceCommitted();
-    void surfacePosChanged();
-
-    void render();
-protected:
-    void surfaceCommitted(QWaylandSurface *surface);
-    void surfaceCreated(QWaylandSurface *surface);
-
-    QWaylandSurfaceView* viewAt(const QPointF &point, QPointF *local = 0);
-
-    bool eventFilter(QObject *obj, QEvent *event);
-    QPointF toView(QWaylandSurfaceView *view, const QPointF &pos) const;
-
-    void setCursorSurface(QWaylandSurface *surface, int hotspotX, int hotspotY);
-
-    void ensureKeyboardFocusSurface(QWaylandSurface *oldSurface);
-    QImage makeBackgroundImage(const QString &fileName);
-
-private slots:
-    void addOutput(QWaylandOutput *output);
-    void sendExpose();
-    void updateCursor(bool hasBuffer);
-
-private:
-    void drawSubSurface(const QPoint &offset, QWaylandSurface *surface);
-
-    CompositorWindow *m_window;
-    QImage m_backgroundImage;
-    QOpenGLTexture *m_backgroundTexture;
-    QList<QWaylandSurface *> m_surfaces;
-    TextureBlitter *m_textureBlitter;
-    GLuint m_surface_fbo;
-    QTimer m_renderScheduler;
-
-    //Dragging windows around
-    QWaylandSurfaceView *m_draggingWindow;
-    bool m_dragKeyIsPressed;
-    QPointF m_drag_diff;
-
-    //Cursor
-    QWaylandSurface *m_cursorSurface;
-    int m_cursorHotspotX;
-    int m_cursorHotspotY;
-
-    Qt::KeyboardModifiers m_modifiers;
+    QWaylandOutputPrivate(QWaylandCompositor *compositor, QWindow *window);
 };
 
 QT_END_NAMESPACE
 
-#endif // QWINDOWCOMPOSITOR_H
+#endif // QWAYLANDOUTPUT_P_H
