@@ -1,0 +1,69 @@
+diff -ru upstream/config.tests/brcm_egl/brcm_egl.pro b/config.tests/brcm_egl/brcm_egl.pro
+--- upstream/config.tests/brcm_egl/brcm_egl.pro	2013-08-15 03:08:24.597718524 +0300
++++ b/config.tests/brcm_egl/brcm_egl.pro	2014-02-08 07:45:43.955930130 +0200
+@@ -1,13 +1,13 @@
+ TARGET = brcm_egl
+ CONFIG -= qt
+ 
+-INCLUDEPATH += $$QMAKE_INCDIR_EGL
++INCLUDEPATH += $$QMAKE_INCDIR_EGL /usr/include/interface /usr/include/interface/vcos/pthreads
+ 
+ for(p, QMAKE_LIBDIR_EGL) {
+     exists($$p):LIBS += -L$$p
+ }
+ 
+-LIBS += $$QMAKE_LIBS_EGL
++LIBS += $$QMAKE_LIBS_EGL -lGLESv2 -lm -lbcm_host
+ 
+ # Input
+ SOURCES += main.cpp
+diff -ru upstream/src/plugins/hardwareintegration/client/brcm-egl/brcm-egl.pro b/src/plugins/hardwareintegration/client/brcm-egl/brcm-egl.pro
+--- upstream/src/plugins/hardwareintegration/client/brcm-egl/brcm-egl.pro	2014-02-07 09:33:17.133343735 +0200
++++ b/src/plugins/hardwareintegration/client/brcm-egl/brcm-egl.pro	2014-02-08 07:50:50.341449414 +0200
+@@ -5,7 +5,8 @@
+ 
+ include(../../../../hardwareintegration/client/brcm-egl/brcm-egl.pri)
+ 
+-LIBS += -lEGL
++INCLUDEPATH += /usr/include/interface /usr/include/interface/vcos/pthreads
++LIBS += -lEGL -lGLESv2 -lm -lbcm_host
+ 
+ OTHER_FILES += \
+     brcm-egl.json
+diff -ru upstream/src/plugins/hardwareintegration/compositor/brcm-egl/brcm-egl.pro b/src/plugins/hardwareintegration/compositor/brcm-egl/brcm-egl.pro
+--- upstream/src/plugins/hardwareintegration/compositor/brcm-egl/brcm-egl.pro	2014-02-07 09:33:17.133343735 +0200
++++ b/src/plugins/hardwareintegration/compositor/brcm-egl/brcm-egl.pro	2014-02-08 07:50:01.633207883 +0200
+@@ -5,7 +5,8 @@
+ 
+ OTHER_FILES += brcm-egl.json
+ 
+-LIBS += -lEGL
++INCLUDEPATH += /usr/include/interface /usr/include/interface/vcos/pthreads
++LIBS += -lEGL -lGLESv2 -lm -lbcm_host
+ 
+ SOURCES += \
+     main.cpp
+diff -ru upstream/src/plugins/platforms/qwayland-brcm-egl/qwayland-brcm-egl.pro b/src/plugins/platforms/qwayland-brcm-egl/qwayland-brcm-egl.pro
+--- upstream/src/plugins/platforms/qwayland-brcm-egl/qwayland-brcm-egl.pro	2014-02-07 09:33:17.137343749 +0200
++++ b/src/plugins/platforms/qwayland-brcm-egl/qwayland-brcm-egl.pro	2014-02-08 07:45:43.955930130 +0200
+@@ -5,7 +5,8 @@
+ 
+ include(../../../hardwareintegration/client/brcm-egl/brcm-egl.pri)
+ 
+-LIBS += -lEGL
++INCLUDEPATH += /usr/include/interface /usr/include/interface/vcos/pthreads
++LIBS += -lEGL -lGLESv2 -lm -lbcm_host
+ 
+ OTHER_FILES += \
+     qwayland-brcm-egl.json
+#diff -ru upstream/config.tests/wayland_egl/main.cpp b/config.tests/wayland_egl/main.cpp
+#--- upstream/config.tests/wayland_egl/main.cpp	2013-08-15 03:08:24.601718544 +0300
+#+++ b/config.tests/wayland_egl/main.cpp	2014-02-08 08:26:34.532081881 +0200
+#@@ -44,5 +44,6 @@
+# {
+#     struct wl_egl_window *window = wl_egl_window_create(0,100,100);
+# 
+#+    printf("%x\n", EGL_WAYLAND_BUFFER_WL);
+#     return 0;
+# }
+#

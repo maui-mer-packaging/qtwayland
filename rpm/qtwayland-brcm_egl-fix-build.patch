@@ -1,0 +1,32 @@
+From 2f7d981e7b9e80a5798eb851359f7eabd1c098de Mon Sep 17 00:00:00 2001
+From: Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+Date: Fri, 25 Apr 2014 01:00:53 +0000
+Subject: [PATCH] Remove deprecated method in brcm_egl plugin
+
+QPlatformIntegrationPlugin::keys() was removed.
+This fixes brcm_egl build.
+---
+ src/plugins/platforms/qwayland-brcm-egl/main.cpp | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/src/plugins/platforms/qwayland-brcm-egl/main.cpp b/src/plugins/platforms/qwayland-brcm-egl/main.cpp
+index bd167f6..73b2d3b 100644
+--- a/src/plugins/platforms/qwayland-brcm-egl/main.cpp
++++ b/src/plugins/platforms/qwayland-brcm-egl/main.cpp
+@@ -52,13 +52,6 @@ public:
+     QPlatformIntegration *create(const QString&, const QStringList&) Q_DECL_OVERRIDE;
+ };
+ 
+-QStringList QWaylandIntegrationPlugin::keys() const
+-{
+-    QStringList list;
+-    list << "wayland-brcm";
+-    return list;
+-}
+-
+ QPlatformIntegration *QWaylandIntegrationPlugin::create(const QString& system, const QStringList& paramList)
+ {
+     Q_UNUSED(paramList);
+-- 
+1.8.3-rc3
+
