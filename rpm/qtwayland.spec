@@ -11,6 +11,7 @@ Source0:        %{name}-%{version}.tar.bz2
 Source100:      precheckin.sh
 Patch0:         qtwayland-brcm_egl-force-vc-include-bcm-libs.patch
 Patch1:         qtwayland-brcm_egl-fix-build.patch
+Patch2:         qtwayland-nogl-fixbuild.patch
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Gui)
 BuildRequires:  pkgconfig(Qt5Widgets)
@@ -76,6 +77,9 @@ This package contains the Qt wayland compositor examples for custom_egl
 %if "%{name}" == "qt5-qtwayland-brcm_egl"
 %patch0 -p1
 %patch1 -p1
+%endif
+%if "%{name}" == "qt5-qtwayland-nogl"
+%patch2 -p1
 %endif
 
 %build

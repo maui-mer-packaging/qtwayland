@@ -1,0 +1,24 @@
+From 4b4585af064596efdfda5c16241bf8f0479a1162 Mon Sep 17 00:00:00 2001
+From: Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+Date: Mon, 21 Jul 2014 16:53:57 +0000
+Subject: [PATCH] Fix build with nogl
+
+---
+ src/compositor/wayland_wrapper/qwlsurfacebuffer.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/compositor/wayland_wrapper/qwlsurfacebuffer.cpp b/src/compositor/wayland_wrapper/qwlsurfacebuffer.cpp
+index eab3bdf..25db679 100644
+--- a/src/compositor/wayland_wrapper/qwlsurfacebuffer.cpp
++++ b/src/compositor/wayland_wrapper/qwlsurfacebuffer.cpp
+@@ -264,7 +264,6 @@ void SurfaceBuffer::createTexture()
+     hwIntegration->bindTextureToBuffer(m_buffer);
+ #else
+     Q_UNUSED(hwIntegration);
+-    Q_UNUSED(context);
+ #endif
+ }
+ 
+-- 
+1.8.3-rc3
+
