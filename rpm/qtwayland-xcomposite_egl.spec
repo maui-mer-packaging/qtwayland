@@ -26,6 +26,9 @@ BuildRequires:  pkgconfig(wayland-cursor)
 %if "%{name}" == "qt5-qtwayland-brcm_egl"
 BuildRequires:  xorg-x11-proto-xproto
 %endif
+%if "%{name}" == "qt5-qtwayland-nogl"
+BuildRequires:  pkgconfig(wayland-egl)
+%endif
 %if "%{name}" == "qt5-qtwayland-wayland_egl"
 BuildRequires:  pkgconfig(wayland-egl)
 %endif
