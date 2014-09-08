@@ -34,6 +34,7 @@ BuildRequires:  pkgconfig(wayland-egl)
 BuildRequires:  pkgconfig(wayland-egl)
 %endif
 
+BuildRequires:  qtchooser
 BuildRequires:  libxkbcommon-devel
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  libffi-devel
@@ -86,7 +87,7 @@ This package contains the Qt wayland compositor examples for brcm_egl
 export QTDIR=/usr/share/qt5
 export QT_WAYLAND_GL_CONFIG=brcm_egl
 touch .git
-%qmake5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
+%qmake5 QT_BUILD_PARTS+=examples CONFIG+=wayland-compositor
 
 make %{?_smp_mflags}
 
@@ -95,8 +96,8 @@ rm -rf %{buildroot}
 %qmake_install
 
 # Workaround to install generated private headers
-cp ./include/QtCompositor/5.3.0/QtCompositor/private/{qwayland-server-*,*protocol*}.h \
-    %{buildroot}/%{_includedir}/qt5/QtCompositor/5.3.0/QtCompositor/private/
+cp ./include/QtCompositor/5.5.0/QtCompositor/private/{qwayland-server-*,*protocol*}.h \
+    %{buildroot}/%{_includedir}/qt5/QtCompositor/5.5.0/QtCompositor/private/
 
 rm %{buildroot}%{_libdir}/cmake/Qt5Gui/Qt5Gui_.cmake
 
