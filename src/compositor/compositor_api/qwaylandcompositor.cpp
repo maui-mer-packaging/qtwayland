@@ -66,10 +66,6 @@ QWaylandCompositor::QWaylandCompositor(const char *socketName, ExtensionFlags ex
 {
     m_compositor->m_socket_name = socketName;
     m_compositor->init();
-
-#if !defined(QT_NO_DEBUG) && !defined(QT_WAYLAND_NO_CLEANUP_WARNING)
-    qWarning("QWaylandCompositor::cleanupGraphicsResources() must be called manually");
-#endif
 }
 
 QWaylandCompositor::QWaylandCompositor(const char *socketName, QtWayland::Compositor *dptr)
@@ -81,8 +77,8 @@ QWaylandCompositor::QWaylandCompositor(const char *socketName, QtWayland::Compos
 
 QWaylandCompositor::~QWaylandCompositor()
 {
-    delete m_compositor;
     qDeleteAll(m_compositor->m_globals);
+    delete m_compositor;
 }
 
 void QWaylandCompositor::addGlobalInterface(QWaylandGlobalInterface *interface)

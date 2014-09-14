@@ -44,6 +44,7 @@
 #include <QKeyEvent>
 #include <QTouchEvent>
 #include <QOpenGLFunctions>
+#include <QOpenGLTexture>
 #include <QGuiApplication>
 #include <QCursor>
 #include <QPixmap>
@@ -58,38 +59,39 @@
 
 QT_BEGIN_NAMESPACE
 
-static GLuint textureFromImage(const QImage &image)
-{
-    GLuint texture = 0;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    QImage tx = image.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width(), tx.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tx.constBits());
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return texture;
-}
-
 class BufferAttacher : public QWaylandBufferAttacher
 {
 public:
+    BufferAttacher()
+        : QWaylandBufferAttacher()
+        , shmTex(0)
+    {
+    }
+
+    ~BufferAttacher()
+    {
+        delete shmTex;
+    }
+
     void attach(const QWaylandBufferRef &ref) Q_DECL_OVERRIDE
     {
         if (bufferRef) {
-            if (ownTexture)
-                glDeleteTextures(1, &texture);
-            else
+            if (bufferRef.isShm()) {
+                delete shmTex;
+                shmTex = 0;
+            } else {
                 bufferRef.destroyTexture();
+            }
         }
 
         bufferRef = ref;
 
         if (bufferRef) {
             if (bufferRef.isShm()) {
-                texture = textureFromImage(bufferRef.image());
-                ownTexture = true;
+                shmTex = new QOpenGLTexture(bufferRef.image(), QOpenGLTexture::DontGenerateMipMaps);
+                texture = shmTex->textureId();
             } else {
                 texture = bufferRef.createTexture();
-                ownTexture = false;
             }
         }
     }
@@ -101,9 +103,9 @@ public:
         return bufferRef.image();
     }
 
+    QOpenGLTexture *shmTex;
     QWaylandBufferRef bufferRef;
     GLuint texture;
-    bool ownTexture;
 };
 
 QWindowCompositor::QWindowCompositor()
@@ -125,7 +127,6 @@ QWindowCompositor::QWindowCompositor()
 
 QWindowCompositor::~QWindowCompositor()
 {
-    glDeleteTextures(1, &m_backgroundTexture);
     delete m_textureBlitter;
 }
 
@@ -170,17 +171,24 @@ void QWindowCompositor::surfaceMapped()
     QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
     QPoint pos;
     if (!m_surfaces.contains(surface)) {
-        uint px = 0;
-        uint py = 0;
-        if (!QCoreApplication::arguments().contains(QLatin1String("-stickytopleft"))) {
-            px = 1 + (qrand() % (m_window->width() - surface->size().width() - 2));
-            py = 1 + (qrand() % (m_window->height() - surface->size().height() - 2));
+        if (surface->windowType() != QWaylandSurface::Popup) {
+            uint px = 0;
+            uint py = 0;
+            if (!QCoreApplication::arguments().contains(QLatin1String("-stickytopleft"))) {
+                px = 1 + (qrand() % (m_window->width() - surface->size().width() - 2));
+                py = 1 + (qrand() % (m_window->height() - surface->size().height() - 2));
+            }
+            pos = QPoint(px, py);
+            QWaylandSurfaceView *view = surface->views().first();
+            view->setPos(pos);
         }
-        pos = QPoint(px, py);
-        QWaylandSurfaceView *view = surface->views().first();
-        view->setPos(pos);
     } else {
         m_surfaces.removeOne(surface);
+    }
+
+    if (surface->windowType() == QWaylandSurface::Popup) {
+        QWaylandSurfaceView *view = surface->views().first();
+        view->setPos(surface->transientParent()->views().first()->pos() + surface->transientOffset());
     }
 
     m_surfaces.append(surface);
@@ -236,7 +244,7 @@ void QWindowCompositor::addOutput(QWaylandOutput *output)
     if (m_window)
         return;
 
-    m_window = static_cast<QOpenGLWindow *>(output->window());
+    m_window = static_cast<CompositorWindow *>(output->window());
     if (!m_window)
         return;
 
@@ -294,7 +302,7 @@ void QWindowCompositor::setCursorSurface(QWaylandSurface *surface, int hotspotX,
     m_cursorSurface = surface;
     m_cursorHotspotX = hotspotX;
     m_cursorHotspotY = hotspotY;
-    if (!m_cursorSurface->bufferAttacher())
+    if (m_cursorSurface && !m_cursorSurface->bufferAttacher())
         m_cursorSurface->setBufferAttacher(new BufferAttacher);
 }
 
@@ -322,11 +330,11 @@ void QWindowCompositor::render()
     cleanupGraphicsResources();
 
     if (!m_backgroundTexture)
-        m_backgroundTexture = textureFromImage(m_backgroundImage);
+        m_backgroundTexture = new QOpenGLTexture(m_backgroundImage, QOpenGLTexture::DontGenerateMipMaps);
 
     m_textureBlitter->bind();
     // Draw the background image texture
-    m_textureBlitter->drawTexture(m_backgroundTexture,
+    m_textureBlitter->drawTexture(m_backgroundTexture->textureId(),
                                   QRect(QPoint(0, 0), m_backgroundImage.size()),
                                   m_window->size(),
                                   0, false, true);

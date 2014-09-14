@@ -38,7 +38,7 @@
 **
 ****************************************************************************/
 
-#include "qopenglwindow.h"
+#include "compositorwindow.h"
 #include "qwindowcompositor.h"
 
 #include <QGuiApplication>
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     QWindowCompositor *compositor = new QWindowCompositor();
 
-    QOpenGLWindow *window = new QOpenGLWindow(format, geom);
+    CompositorWindow *window = new CompositorWindow(format, geom);
     QWaylandOutput *output = new QWaylandOutput(compositor, window);
     output->setRefreshRate(qRound(screen->refreshRate() * 1000.0));
     window->show();

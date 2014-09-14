@@ -175,6 +175,9 @@ Compositor::~Compositor()
 {
     qDeleteAll(m_clients);
 
+    if (!m_destroyed_surfaces.isEmpty())
+        qWarning("QWaylandCompositor::cleanupGraphicsResources() must be called manually");
+
     delete m_outputExtension;
     delete m_surfaceExtension;
     delete m_subSurfaceExtension;
