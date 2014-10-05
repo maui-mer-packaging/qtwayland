@@ -1,13 +1,18 @@
-%define _qtmodule_snapshot_version 0.0git441.g0d59717
+# Version from git
+%define _qtmodule_snapshot_version 0.0.alpha1.16.gb62ae0f
 
-Name:           qt5-qtwayland-xcomposite_egl
-Summary:        Qt Wayland compositor, xcomposite_egl variant
-Version:        %{_qtmodule_snapshot_version}
-Release:        1%{?dist}
+# Package prefix
+%define pkgname qt5-qtwayland-xcomposite_egl
+
+Name:           qtwayland-xcomposite_egl
+Summary:        Qt Wayland, xcomposite_egl variant
+#Version:        %{_qtmodule_snapshot_version}
+Version:        5.3.90
+Release:        1
 Group:          Qt/Qt
 License:        LGPLv2.1 with exception or GPLv3
-URL:            http://qt-project.org
-Source0:        %{name}-%{version}.tar.bz2
+URL:            http://qt.io
+Source0:        %{name}-%{version}.tar.xz
 Source100:      precheckin.sh
 Patch0:         qtwayland-brcm_egl-force-vc-include-bcm-libs.patch
 Patch1:         qtwayland-brcm_egl-fix-build.patch
@@ -46,35 +51,51 @@ Requires:       xkeyboard-config
 Qt is a cross-platform application and UI framework. Using Qt, you can
 write web-enabled applications once and deploy them across desktop,
 mobile and embedded systems without rewriting the source code.
-.
-This package contains the Qt wayland compositor for xcomposite_egl
 
-%package devel
-Summary:        Qt Wayland compositor - development files
+This package contains the Qt wayland compositor for xcomposite_egl.
+
+
+%package -n %{pkgname}
+Summary:        Qt Wayland for applications and compositors
 Group:          Qt/Qt
-Requires:       %{name} = %{version}-%{release}
 
-%description devel
+%description -n %{pkgname}
 Qt is a cross-platform application and UI framework. Using Qt, you can
 write web-enabled applications once and deploy them across desktop,
 mobile and embedded systems without rewriting the source code.
-.
-This package contains the Qt wayland compositor development files for xcomposite_egl
 
-%package examples
+This package contains the Qt wayland compositor for xcomposite_egl.
+
+
+%package -n %{pkgname}-devel
+Summary:        Qt Wayland for applications and compositors - development files
+Group:          Qt/Qt
+Requires:       %{pkgname} = %{version}-%{release}
+
+%description -n %{pkgname}-devel
+Qt is a cross-platform application and UI framework. Using Qt, you can
+write web-enabled applications once and deploy them across desktop,
+mobile and embedded systems without rewriting the source code.
+
+This package contains the Qt wayland compositor development
+files for xcomposite_egl.
+
+
+%package -n %{pkgname}-examples
 Summary:        Qt Wayland compositor - examples
 Group:          Qt/Qt
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{pkgname} = %{version}-%{release}
 
-%description examples
+%description -n %{pkgname}-examples
 Qt is a cross-platform application and UI framework. Using Qt, you can
 write web-enabled applications once and deploy them across desktop,
 mobile and embedded systems without rewriting the source code.
-.
-This package contains the Qt wayland compositor examples for xcomposite_egl
+
+This package contains the Qt wayland compositor examples for xcomposite_egl.
+
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
+%setup -q -n %{name}-%{version}
 %if "%{name}" == "qt5-qtwayland-brcm_egl"
 %patch0 -p1
 %patch1 -p1
@@ -83,6 +104,7 @@ This package contains the Qt wayland compositor examples for xcomposite_egl
 %patch2 -p1
 %endif
 
+
 %build
 export QTDIR=/usr/share/qt5
 export QT_WAYLAND_GL_CONFIG=xcomposite_egl
@@ -90,6 +112,7 @@ touch .git
 %qmake5 QT_BUILD_PARTS+=examples CONFIG+=wayland-compositor
 
 make %{?_smp_mflags}
+
 
 %install
 rm -rf %{buildroot}
@@ -103,21 +126,22 @@ rm %{buildroot}%{_libdir}/cmake/Qt5Gui/Qt5Gui_.cmake
 
 # Fix wrong path in pkgconfig files
 find %{buildroot}%{_libdir}/pkgconfig -type f -name '*.pc' \
--exec perl -pi -e "s, -L%{_builddir}/?\S+,,g" {} \;
+    -exec perl -pi -e "s, -L%{_builddir}/?\S+,,g" {} \;
 # Fix wrong path in prl files
 find %{buildroot}%{_libdir} -type f -name '*.prl' \
--exec sed -i -e "/^QMAKE_PRL_BUILD_DIR/d;s/\(QMAKE_PRL_LIBS =\).*/\1/" {} \;
+    -exec sed -i -e "/^QMAKE_PRL_BUILD_DIR/d;s/\(QMAKE_PRL_LIBS =\).*/\1/" {} \;
 
 # We don't need qt5/Qt/
 rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
-
 %fdupes %{buildroot}/%{_includedir}
 
-%post -p /sbin/ldconfig
-%postun -p /sbin/ldconfig
 
-%files
+%post -n %{pkgname} -p /sbin/ldconfig
+%postun -n %{pkgname} -p /sbin/ldconfig
+
+
+%files -n %{pkgname}
 %defattr(-,root,root,-)
 %{_libdir}/libQt5Compositor.so.5
 %{_libdir}/libQt5Compositor.so.5.*
@@ -148,7 +172,7 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %{_libdir}/qt5/plugins/platforms/libqwayland-nogl.so
 %endif
 
-%files devel
+%files -n %{pkgname}-devel
 %defattr(-,root,root,-)
 %{_libdir}/libQt5Compositor.so
 %{_includedir}/qt5/*
@@ -167,6 +191,6 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %{_libdir}/cmake/Qt5WaylandClient/*
 %{_libdir}/qt5/bin/qtwaylandscanner
 
-%files examples
+%files -n %{pkgname}-examples
 %defattr(-,root,root,-)
 %{_libdir}/qt5/examples/qtwayland/
