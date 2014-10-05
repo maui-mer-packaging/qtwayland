@@ -1,9 +1,9 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2014 Robin Burchell <robin.burchell@viroteck.net>
 ** Contact: http://www.qt-project.org/legal
 **
-** This file is part of the plugins of the Qt Toolkit.
+** This file is part of the QtGui module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
@@ -39,52 +39,16 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDEVENTTHREAD_H
-#define QWAYLANDEVENTTHREAD_H
-
-#include <QObject>
-#include <QMutex>
-#include <wayland-client.h>
-
-#include <QtWaylandClient/private/qwaylandclientexport_p.h>
+#include "qwaylanddecorationplugin_p.h"
 
 QT_BEGIN_NAMESPACE
 
-class QSocketNotifier;
-
-class Q_WAYLAND_CLIENT_EXPORT QWaylandEventThread : public QObject
+QWaylandDecorationPlugin::QWaylandDecorationPlugin(QObject *parent)
+    : QObject(parent)
 {
-    Q_OBJECT
-public:
-    explicit QWaylandEventThread(QObject *parent = 0);
-    ~QWaylandEventThread();
-
-    void displayConnect();
-
-    wl_display *display() const;
-
-    void checkError() const;
-
-private slots:
-    void readWaylandEvents();
-
-    void waylandDisplayConnect();
-
-signals:
-    void newEventsRead();
-    void fatalError();
-
-private:
-
-    struct wl_display *m_display;
-    int m_fileDescriptor;
-
-    QSocketNotifier *m_readNotifier;
-
-    QMutex *m_displayLock;
-
-};
+}
+QWaylandDecorationPlugin::~QWaylandDecorationPlugin()
+{
+}
 
 QT_END_NAMESPACE
-
-#endif // QWAYLANDEVENTTHREAD_H

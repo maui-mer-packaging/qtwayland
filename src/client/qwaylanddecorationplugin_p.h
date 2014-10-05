@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2014 Robin Burchell <robin.burchell@viroteck.net>
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -39,52 +39,31 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDEVENTTHREAD_H
-#define QWAYLANDEVENTTHREAD_H
-
-#include <QObject>
-#include <QMutex>
-#include <wayland-client.h>
+#ifndef QWAYLANDDECORATIONPLUGIN_H
+#define QWAYLANDDECORATIONPLUGIN_H
 
 #include <QtWaylandClient/private/qwaylandclientexport_p.h>
 
+#include <QtCore/qplugin.h>
+#include <QtCore/qfactoryinterface.h>
+#include <QtCore/QObject>
+
 QT_BEGIN_NAMESPACE
 
-class QSocketNotifier;
+class QWaylandAbstractDecoration;
 
-class Q_WAYLAND_CLIENT_EXPORT QWaylandEventThread : public QObject
+#define QWaylandDecorationFactoryInterface_iid "org.qt-project.Qt.WaylandClient.QWaylandDecorationFactoryInterface.5.4"
+
+class Q_WAYLAND_CLIENT_EXPORT QWaylandDecorationPlugin : public QObject
 {
     Q_OBJECT
 public:
-    explicit QWaylandEventThread(QObject *parent = 0);
-    ~QWaylandEventThread();
+    explicit QWaylandDecorationPlugin(QObject *parent = 0);
+    ~QWaylandDecorationPlugin();
 
-    void displayConnect();
-
-    wl_display *display() const;
-
-    void checkError() const;
-
-private slots:
-    void readWaylandEvents();
-
-    void waylandDisplayConnect();
-
-signals:
-    void newEventsRead();
-    void fatalError();
-
-private:
-
-    struct wl_display *m_display;
-    int m_fileDescriptor;
-
-    QSocketNotifier *m_readNotifier;
-
-    QMutex *m_displayLock;
-
+    virtual QWaylandAbstractDecoration *create(const QString &key, const QStringList &paramList) = 0;
 };
 
 QT_END_NAMESPACE
 
-#endif // QWAYLANDEVENTTHREAD_H
+#endif // QWAYLANDDECORATIONPLUGIN_H

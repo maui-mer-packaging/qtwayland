@@ -165,6 +165,7 @@ public slots:
 
 private:
     void waitForScreens();
+    void exitWithError();
 
     struct Listener {
         RegistryListener listener;

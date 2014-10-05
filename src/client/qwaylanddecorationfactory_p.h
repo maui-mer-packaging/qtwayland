@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2014 Robin Burchell <robin.burchell@viroteck.net>
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -39,52 +39,23 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDEVENTTHREAD_H
-#define QWAYLANDEVENTTHREAD_H
-
-#include <QObject>
-#include <QMutex>
-#include <wayland-client.h>
+#ifndef QWAYLANDDECORATIONFACTORY_H
+#define QWAYLANDDECORATIONFACTORY_H
 
 #include <QtWaylandClient/private/qwaylandclientexport_p.h>
+#include <QtCore/QStringList>
 
 QT_BEGIN_NAMESPACE
 
-class QSocketNotifier;
+class QWaylandAbstractDecoration;
 
-class Q_WAYLAND_CLIENT_EXPORT QWaylandEventThread : public QObject
+class Q_WAYLAND_CLIENT_EXPORT QWaylandDecorationFactory
 {
-    Q_OBJECT
 public:
-    explicit QWaylandEventThread(QObject *parent = 0);
-    ~QWaylandEventThread();
-
-    void displayConnect();
-
-    wl_display *display() const;
-
-    void checkError() const;
-
-private slots:
-    void readWaylandEvents();
-
-    void waylandDisplayConnect();
-
-signals:
-    void newEventsRead();
-    void fatalError();
-
-private:
-
-    struct wl_display *m_display;
-    int m_fileDescriptor;
-
-    QSocketNotifier *m_readNotifier;
-
-    QMutex *m_displayLock;
-
+    static QStringList keys(const QString &pluginPath = QString());
+    static QWaylandAbstractDecoration *create(const QString &name, const QStringList &args, const QString &pluginPath = QString());
 };
 
 QT_END_NAMESPACE
 
-#endif // QWAYLANDEVENTTHREAD_H
+#endif // QWAYLANDDECORATIONFACTORY_H
