@@ -214,7 +214,12 @@ void QWaylandScreen::output_done()
     // the done event is sent after all the geometry and the mode events are sent,
     // and the last mode event to be sent is the active one, so we can trust the
     // values of mGeometry and mRefreshRate here
+#if QT_VERSION <= QT_VERSION_CHECK(5, 4, 0)
+    QWindowSystemInterface::handleScreenGeometryChange(screen(), mGeometry);
+    QWindowSystemInterface::handleScreenAvailableGeometryChange(screen(), mGeometry);
+#else
     QWindowSystemInterface::handleScreenGeometryChange(screen(), mGeometry, mGeometry);
+#endif
     QWindowSystemInterface::handleScreenRefreshRateChange(screen(), refreshRate());
 }
 
