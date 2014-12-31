@@ -94,8 +94,6 @@ public:
     ~Compositor();
 
     void init();
-    void sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces);
-    void frameFinished(Surface *surface = 0);
 
     InputDevice *defaultInputDevice();
 
@@ -126,8 +124,6 @@ public:
     void initializeDefaultInputDevice();
     void initializeWindowManagerProtocol();
 
-    QList<Surface*> surfaces() const { return m_surfaces; }
-    QList<Surface*> surfacesForClient(wl_client* client);
     QWaylandCompositor *waylandCompositor() const { return m_qt_compositor; }
 
     struct wl_display *wl_display() const { return m_display->handle(); }
@@ -193,7 +189,6 @@ protected:
     DataDeviceManager *m_data_device_manager;
 
     QElapsedTimer m_timer;
-    QList<Surface *> m_surfaces;
     QSet<QWaylandSurface *> m_destroyed_surfaces;
 
     /* Render state */

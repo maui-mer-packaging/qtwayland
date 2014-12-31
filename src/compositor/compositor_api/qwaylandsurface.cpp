@@ -266,6 +266,11 @@ void QWaylandSurface::setVisibility(QWindow::Visibility v)
     emit visibilityChanged();
 }
 
+void QWaylandSurface::outputChangedEvent(QWaylandOutputChangedEvent *event)
+{
+    Q_UNUSED(event);
+}
+
 bool QWaylandSurface::sendInterfaceOp(QWaylandSurfaceOp &op)
 {
     Q_D(QWaylandSurface);

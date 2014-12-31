@@ -110,6 +110,15 @@ public:
 
     QWaylandOutput *waylandOutput() const { return m_output; }
 
+    void frameStarted();
+    void sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces);
+
+    QList<QWaylandSurface *> surfaces() const { return m_surfaces; }
+    QList<QWaylandSurface *> surfacesForClient(QWaylandClient *client) const;
+
+    void addSurface(QWaylandSurface *surface);
+    void removeSurface(QWaylandSurface *surface);
+
     void output_bind_resource(Resource *resource) Q_DECL_OVERRIDE;
     Resource *output_allocate() Q_DECL_OVERRIDE { return new OutputResource; }
 
@@ -128,6 +137,7 @@ private:
     QWaylandOutput::Subpixel m_subpixel;
     QWaylandOutput::Transform m_transform;
     int m_scaleFactor;
+    QList<QWaylandSurface *> m_surfaces;
 
     void sendGeometryInfo();
 };

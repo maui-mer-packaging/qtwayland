@@ -114,6 +114,8 @@ public:
     Compositor *compositor() const;
 
     Output *output() const;
+    void setOutput(Output *output);
+    void removeFromOutput();
 
     QString className() const { return m_className; }
     void setClassName(const QString &className);

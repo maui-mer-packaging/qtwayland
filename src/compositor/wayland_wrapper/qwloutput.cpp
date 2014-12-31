@@ -43,9 +43,12 @@
 
 #include "qwlcompositor_p.h"
 #include "qwlextendedoutput_p.h"
+#include "qwlsurface_p.h"
 
 #include <QtGui/QWindow>
 #include <QRect>
+#include <QtCompositor/QWaylandSurface>
+#include <QtCompositor/QWaylandOutput>
 
 QT_BEGIN_NAMESPACE
 
@@ -244,6 +247,48 @@ void Output::setScaleFactor(int scale)
 OutputResource *Output::outputForClient(wl_client *client) const
 {
     return static_cast<OutputResource *>(resourceMap().value(client));
+}
+
+void Output::frameStarted()
+{
+    Q_FOREACH (QWaylandSurface *surface, m_surfaces)
+        surface->handle()->frameStarted();
+}
+
+void Output::sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces)
+{
+    Q_FOREACH (QWaylandSurface *surface, visibleSurfaces)
+        surface->handle()->sendFrameCallback();
+    wl_display_flush_clients(m_compositor->wl_display());
+}
+
+QList<QWaylandSurface *> Output::surfacesForClient(QWaylandClient *client) const
+{
+    QList<QWaylandSurface *> result;
+
+    Q_FOREACH (QWaylandSurface *surface, m_surfaces) {
+        if (surface->client() == client)
+            result.append(result);
+    }
+
+    return result;
+}
+
+void Output::addSurface(QWaylandSurface *surface)
+{
+    if (surface->output() == waylandOutput())
+        return;
+    if (surface->output())
+        surface->output()->handle()->removeSurface(surface);
+
+    surface->handle()->setOutput(this);
+    m_surfaces.append(surface);
+}
+
+void Output::removeSurface(QWaylandSurface *surface)
+{
+    m_surfaces.removeOne(surface);
+    surface->handle()->setOutput(Q_NULLPTR);
 }
 
 void Output::sendGeometryInfo()

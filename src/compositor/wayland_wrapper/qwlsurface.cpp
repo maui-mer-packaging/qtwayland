@@ -114,7 +114,7 @@ Surface::Surface(struct wl_client *client, uint32_t id, int version, QWaylandCom
     : QtWaylandServer::wl_surface(client, id, version)
     , m_compositor(compositor->handle())
     , m_waylandSurface(surface)
-    , m_output(m_compositor->primaryOutput()->handle())
+    , m_output(0)
     , m_buffer(0)
     , m_surfaceMapped(false)
     , m_attacher(0)
@@ -281,6 +281,43 @@ Compositor *Surface::compositor() const
 Output *Surface::output() const
 {
     return m_output;
+}
+
+void Surface::setOutput(Output *output)
+{
+    if (m_output == output)
+        return;
+
+    QWaylandOutput *oldOutput = m_output ? m_output->waylandOutput() : 0;
+    m_output = output;
+
+    QWaylandOutputChangedEvent event(oldOutput, m_output ? m_output->waylandOutput() : 0);
+    // TODO: Consider doing something like this:
+    //QCoreApplication::sendEvent(waylandSurface(), &event);
+    waylandSurface()->outputChangedEvent(&event);
+
+    // Send surface enter event
+    Q_FOREACH (Resource *resource, resourceMap().values()) {
+        QList<Output::Resource *> outputs = m_output->resourceMap().values();
+        for (int i = 0; i < outputs.size(); i++)
+            send_enter(resource->handle, outputs.at(i)->handle);
+    }
+}
+
+void Surface::removeFromOutput()
+{
+    if (!m_output)
+        return;
+
+    // Remove surface
+    m_output->removeSurface(this->waylandSurface());
+
+    // Send surface leave event
+    Q_FOREACH (Resource *resource, resourceMap().values()) {
+        QList<Output::Resource *> outputs = m_output->resourceMap().values();
+        for (int i = 0; i < outputs.size(); i++)
+            send_leave(resource->handle, outputs.at(i)->handle);
+    }
 }
 
 /*!

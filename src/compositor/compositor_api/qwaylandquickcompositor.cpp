@@ -40,6 +40,7 @@
 ****************************************************************************/
 
 #include <QtCompositor/private/qwlcompositor_p.h>
+#include <QtCompositor/private/qwlsurface_p.h>
 
 #include "qwaylandclient.h"
 #include "qwaylandquickcompositor.h"
@@ -61,7 +62,7 @@ public:
     void compositor_create_surface(Resource *resource, uint32_t id) Q_DECL_OVERRIDE
     {
         QWaylandQuickSurface *surface = new QWaylandQuickSurface(resource->client(), id, wl_resource_get_version(resource->handle), static_cast<QWaylandQuickCompositor *>(m_qt_compositor));
-        m_surfaces << surface->handle();
+        primaryOutput()->addSurface(surface);
         //BUG: This may not be an on-screen window surface though
         m_qt_compositor->surfaceCreated(surface);
     }

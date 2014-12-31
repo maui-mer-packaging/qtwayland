@@ -98,17 +98,6 @@ struct wl_display *QWaylandCompositor::waylandDisplay() const
     return m_compositor->wl_display();
 }
 
-void QWaylandCompositor::sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces)
-{
-    m_compositor->sendFrameCallbacks(visibleSurfaces);
-}
-
-void QWaylandCompositor::frameStarted()
-{
-    for (QtWayland::Surface *surf: m_compositor->surfaces())
-        surf->frameStarted();
-}
-
 void QWaylandCompositor::destroyClientForSurface(QWaylandSurface *surface)
 {
     destroyClient(surface->client());
@@ -119,29 +108,54 @@ void QWaylandCompositor::destroyClient(QWaylandClient *client)
     m_compositor->destroyClient(client);
 }
 
-QList<QWaylandSurface *> QWaylandCompositor::surfacesForClient(QWaylandClient* client) const
+#if QT_DEPRECATED_SINCE(5, 5)
+void QWaylandCompositor::frameStarted()
 {
-    QList<QtWayland::Surface *> surfaces = m_compositor->surfaces();
+    Q_FOREACH (QWaylandOutput *output, outputs())
+        output->frameStarted();
+}
 
-    QList<QWaylandSurface *> result;
+typedef QList<QWaylandSurface *> QWaylandSurfaceList;
+typedef std::pair<QWaylandOutput *, QWaylandSurfaceList> QWaylandOutputSurfaceListPair;
 
-    for (int i = 0; i < surfaces.count(); ++i) {
-        if (surfaces.at(i)->waylandSurface()->client() == client) {
-            result.append(surfaces.at(i)->waylandSurface());
-        }
+static QList<QWaylandSurface *> &getSurfaceListForOutput(QList<QWaylandOutputSurfaceListPair> &list, QWaylandOutput *output)
+{
+    for (int i = 0; i < list.size(); i++) {
+        if (list.at(i).first == output)
+            return list[i].second;
     }
 
-    return result;
+    list.append(std::make_pair(output, QList<QWaylandSurface *>()));
+    return list.last().second;
+}
+
+void QWaylandCompositor::sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces)
+{
+    QList<QWaylandOutputSurfaceListPair> visibleOutputSurfaces;
+    Q_FOREACH (QWaylandSurface *surface, visibleSurfaces) {
+        getSurfaceListForOutput(visibleOutputSurfaces, surface->output()).append(surface);
+    }
+
+    for (int i = 0; i < visibleOutputSurfaces.size(); i++)
+        visibleOutputSurfaces.at(i).first->sendFrameCallbacks(visibleOutputSurfaces.at(i).second);
+}
+
+QList<QWaylandSurface *> QWaylandCompositor::surfacesForClient(QWaylandClient* client) const
+{
+    QList<QWaylandSurface *> surfaces;
+    Q_FOREACH (QWaylandOutput *output, outputs())
+        surfaces.append(output->surfacesForClient(client));
+    return surfaces;
 }
 
 QList<QWaylandSurface *> QWaylandCompositor::surfaces() const
 {
-    QList<QtWayland::Surface *> surfaces = m_compositor->surfaces();
     QList<QWaylandSurface *> surfs;
-    foreach (QtWayland::Surface *s, surfaces)
-        surfs << s->waylandSurface();
+    Q_FOREACH (QWaylandOutput *output, outputs())
+        surfs.append(output->surfaces());
     return surfs;
 }
+#endif
 
 QList<QWaylandOutput *> QWaylandCompositor::outputs() const
 {
@@ -175,13 +189,20 @@ void QWaylandCompositor::surfaceAboutToBeDestroyed(QWaylandSurface *surface)
 
 QWaylandSurfaceView *QWaylandCompositor::pickView(const QPointF &globalPosition) const
 {
-    Q_FOREACH (QtWayland::Surface *surface, m_compositor->surfaces()) {
-        foreach (QWaylandSurfaceView *view, surface->waylandSurface()->views())
-            if (QRectF(view->pos(), surface->size()).contains(globalPosition))
-                return view;
+    Q_FOREACH (QWaylandOutput *output, outputs()) {
+        // Skip coordinates not in output
+        if (!QRectF(output->geometry()).contains(globalPosition))
+            continue;
+
+        Q_FOREACH (QWaylandSurface *surface, output->surfaces()) {
+            Q_FOREACH (QWaylandSurfaceView *view, surface->views()) {
+                if (QRectF(view->pos(), surface->size()).contains(globalPosition))
+                    return view;
+            }
+        }
     }
 
-    return 0;
+    return Q_NULLPTR;
 }
 
 QPointF QWaylandCompositor::mapToView(QWaylandSurfaceView *surface, const QPointF &globalPosition) const

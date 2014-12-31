@@ -75,6 +75,9 @@ public:
 
     QObject *windowPropertyMap() const;
 
+protected:
+    void outputChangedEvent(QWaylandOutputChangedEvent *event) Q_DECL_OVERRIDE;
+
 Q_SIGNALS:
     void useTextureAlphaChanged();
     void clientRenderingEnabledChanged();

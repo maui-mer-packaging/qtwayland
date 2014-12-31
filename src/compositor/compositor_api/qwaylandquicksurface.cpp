@@ -167,12 +167,8 @@ QWaylandQuickSurface::QWaylandQuickSurface(wl_client *client, quint32 id, int ve
     d->buffer->surface = this;
     setBufferAttacher(d->buffer);
 
-    QQuickWindow *window = static_cast<QQuickWindow *>(output()->window());
-    connect(window, &QQuickWindow::beforeSynchronizing, this, &QWaylandQuickSurface::updateTexture, Qt::DirectConnection);
-    connect(window, &QQuickWindow::sceneGraphInvalidated, this, &QWaylandQuickSurface::invalidateTexture, Qt::DirectConnection);
     connect(this, &QWaylandSurface::windowPropertyChanged, d->windowPropertyMap, &QQmlPropertyMap::insert);
     connect(d->windowPropertyMap, &QQmlPropertyMap::valueChanged, this, &QWaylandSurface::setWindowProperty);
-
 }
 
 QWaylandQuickSurface::~QWaylandQuickSurface()
@@ -208,6 +204,20 @@ QObject *QWaylandQuickSurface::windowPropertyMap() const
     return d->windowPropertyMap;
 }
 
+void QWaylandQuickSurface::outputChangedEvent(QWaylandOutputChangedEvent *event)
+{
+    if (event->oldOutput) {
+        QQuickWindow *oldWindow = static_cast<QQuickWindow *>(event->oldOutput->window());
+        disconnect(oldWindow, &QQuickWindow::beforeSynchronizing, this, &QWaylandQuickSurface::updateTexture);
+        disconnect(oldWindow, &QQuickWindow::sceneGraphInvalidated, this, &QWaylandQuickSurface::invalidateTexture);
+    }
+
+    if (event->newOutput) {
+        QQuickWindow *window = static_cast<QQuickWindow *>(event->newOutput->window());
+        connect(window, &QQuickWindow::beforeSynchronizing, this, &QWaylandQuickSurface::updateTexture, Qt::DirectConnection);
+        connect(window, &QQuickWindow::sceneGraphInvalidated, this, &QWaylandQuickSurface::invalidateTexture, Qt::DirectConnection);
+    }
+}
 
 void QWaylandQuickSurface::updateTexture()
 {

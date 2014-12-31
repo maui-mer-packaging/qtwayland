@@ -244,3 +244,33 @@ QtWayland::Output *QWaylandOutput::handle()
 {
     return d_ptr;
 }
+
+void QWaylandOutput::frameStarted()
+{
+    d_ptr->frameStarted();
+}
+
+void QWaylandOutput::sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces)
+{
+    d_ptr->sendFrameCallbacks(visibleSurfaces);
+}
+
+QList<QWaylandSurface *> QWaylandOutput::surfaces() const
+{
+    return d_ptr->surfaces();
+}
+
+QList<QWaylandSurface *> QWaylandOutput::surfacesForClient(QWaylandClient *client) const
+{
+    return d_ptr->surfacesForClient(client);
+}
+
+void QWaylandOutput::addSurface(QWaylandSurface *surface)
+{
+    d_ptr->addSurface(surface);
+}
+
+void QWaylandOutput::removeSurface(QWaylandSurface *surface)
+{
+    d_ptr->removeSurface(surface);
+}

@@ -54,6 +54,8 @@ struct wl_resource;
 
 class QWaylandCompositor;
 class QWindow;
+class QWaylandSurface;
+class QWaylandClient;
 
 namespace QtWayland {
     class Output;
@@ -142,6 +144,15 @@ public:
     QWindow *window() const;
 
     QtWayland::Output *handle();
+
+    void frameStarted();
+    void sendFrameCallbacks(QList<QWaylandSurface *> visibleSurfaces);
+
+    QList<QWaylandSurface *> surfaces() const;
+    QList<QWaylandSurface *> surfacesForClient(QWaylandClient *client) const;
+
+    void addSurface(QWaylandSurface *surface);
+    void removeSurface(QWaylandSurface *surface);
 
 Q_SIGNALS:
     void positionChanged();

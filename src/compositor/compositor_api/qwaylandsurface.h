@@ -81,6 +81,19 @@ protected:
     friend class QtWayland::Surface;
 };
 
+class QWaylandOutputChangedEvent
+{
+public:
+    QWaylandOutputChangedEvent(QWaylandOutput *oldOutput, QWaylandOutput *newOutput)
+        : oldOutput(oldOutput)
+        , newOutput(newOutput)
+    {
+    }
+
+    QWaylandOutput *oldOutput;
+    QWaylandOutput *newOutput;
+};
+
 class Q_COMPOSITOR_EXPORT QWaylandSurface : public QObject
 {
     Q_OBJECT
@@ -198,6 +211,8 @@ public slots:
 protected:
     QWaylandSurface(QWaylandSurfacePrivate *dptr);
 
+    virtual void outputChangedEvent(QWaylandOutputChangedEvent *event);
+
 Q_SIGNALS:
     void mapped();
     void unmapped();
@@ -223,6 +238,7 @@ Q_SIGNALS:
 
     friend class QWaylandSurfaceView;
     friend class QWaylandSurfaceInterface;
+    friend class QtWayland::Surface;
 };
 
 QT_END_NAMESPACE
