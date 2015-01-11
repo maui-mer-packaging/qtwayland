@@ -184,6 +184,9 @@ QtWaylandServer::wl_keyboard::Resource *Keyboard::focusResource() const
 
 void Keyboard::keyboard_bind_resource(wl_keyboard::Resource *resource)
 {
+    // Send repeat information
+    send_repeat_info(resource->handle, 40, 400);
+
 #ifndef QT_NO_WAYLAND_XKB
     if (m_context) {
         send_keymap(resource->handle, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
