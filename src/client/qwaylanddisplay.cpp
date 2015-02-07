@@ -168,9 +168,7 @@ QWaylandDisplay::QWaylandDisplay(QWaylandIntegration *waylandIntegration)
 
 QWaylandDisplay::~QWaylandDisplay(void)
 {
-    foreach (QWaylandScreen *screen, mScreens) {
-        mWaylandIntegration->destroyScreen(screen);
-    }
+    qDeleteAll(mScreens);
     mScreens.clear();
     delete mDndSelectionHandler.take();
     mEventThread->quit();
@@ -289,8 +287,8 @@ void QWaylandDisplay::registry_global_remove(uint32_t id)
             if (global.interface == QStringLiteral("wl_output")) {
                 foreach (QWaylandScreen *screen, mScreens) {
                     if (screen->outputId() == id) {
+                        delete screen;
                         mScreens.removeOne(screen);
-                        mWaylandIntegration->destroyScreen(screen);
                         break;
                     }
                 }
