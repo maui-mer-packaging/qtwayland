@@ -52,14 +52,23 @@
 #include "qwaylandsurface.h"
 
 QWaylandOutput::QWaylandOutput(QWaylandCompositor *compositor, QWindow *window,
-                               const QString &manufacturer, const QString &model)
+                               const QString &manufacturer, const QString &model,
+                               const QWaylandOutputModeList &list)
     : QObject()
     , d_ptr(new QtWayland::Output(compositor->handle(), window))
 {
     d_ptr->m_output = this;
     d_ptr->setManufacturer(manufacturer);
     d_ptr->setModel(model);
+    d_ptr->setModes(list);
     d_ptr->compositor()->addOutput(this);
+
+    if (window && currentMode()) {
+        const QSize size = currentMode()->size();
+        window->resize(size);
+        window->setMinimumSize(size);
+        window->setMaximumSize(size);
+    }
 }
 
 QWaylandOutput::~QWaylandOutput()
@@ -120,25 +129,54 @@ void QWaylandOutput::setPosition(const QPoint &pt)
     Q_EMIT geometryChanged();
 }
 
-QWaylandOutput::Mode QWaylandOutput::mode() const
+QWaylandOutputModeList QWaylandOutput::modes() const
 {
-    return d_ptr->mode();
+    return d_ptr->modes();
 }
 
-void QWaylandOutput::setMode(const Mode &mode)
+QWaylandOutputMode *QWaylandOutput::mode(const QString &id) const
 {
-    if (d_ptr->mode().size == mode.size && d_ptr->mode().refreshRate == mode.refreshRate)
+    return d_ptr->mode(id);
+}
+
+QWaylandOutputMode *QWaylandOutput::currentMode() const
+{
+    return d_ptr->currentMode();
+}
+
+void QWaylandOutput::setCurrentMode(QWaylandOutputMode *mode)
+{
+    if (d_ptr->currentMode() == mode)
+        return;
+    if (d_ptr->mode(mode->id()) != mode)
         return;
 
-    d_ptr->setMode(mode);
-    Q_EMIT modeChanged();
+    d_ptr->setCurrentMode(mode);
+    Q_EMIT currentModeChanged();
     Q_EMIT geometryChanged();
 
     if (window()) {
-        window()->resize(mode.size);
-        window()->setMinimumSize(mode.size);
-        window()->setMaximumSize(mode.size);
+        const QSize size = mode->size();
+        window()->resize(size);
+        window()->setMinimumSize(size);
+        window()->setMaximumSize(size);
     }
+}
+
+QWaylandOutputMode *QWaylandOutput::preferredMode() const
+{
+    return d_ptr->preferredMode();
+}
+
+void QWaylandOutput::setPreferredMode(QWaylandOutputMode *mode)
+{
+    if (d_ptr->preferredMode() == mode)
+        return;
+    if (d_ptr->mode(mode->id()) != mode)
+        return;
+
+    d_ptr->setPreferredMode(mode);
+    Q_EMIT preferredModeChanged();
 }
 
 QRect QWaylandOutput::geometry() const
@@ -146,26 +184,10 @@ QRect QWaylandOutput::geometry() const
     return d_ptr->geometry();
 }
 
-void QWaylandOutput::setGeometry(const QRect &geometry)
-{
-    if (d_ptr->geometry() == geometry)
-        return;
-
-    d_ptr->setGeometry(geometry);
-    Q_EMIT positionChanged();
-    Q_EMIT modeChanged();
-
-    if (window()) {
-        window()->resize(geometry.size());
-        window()->setMinimumSize(geometry.size());
-        window()->setMaximumSize(geometry.size());
-    }
-}
-
 QRect QWaylandOutput::availableGeometry() const
 {
     if (!d_ptr->availableGeometry().isValid())
-        return QRect(d_ptr->position(), d_ptr->mode().size);
+        return d_ptr->geometry();
 
     return d_ptr->availableGeometry();
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+** Copyright (C) 2014-2015 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2015 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
@@ -84,10 +84,17 @@ public:
     void setPosition(const QPoint &position);
 
     QRect geometry() const;
-    void setGeometry(const QRect &geometry);
 
-    QWaylandOutput::Mode mode() const { return m_mode; }
-    void setMode(const QWaylandOutput::Mode &mode);
+    QWaylandOutputModeList modes() const;
+    void setModes(const QWaylandOutputModeList &list);
+
+    QWaylandOutputMode *mode(const QString &id) const;
+
+    QWaylandOutputMode *currentMode() const { return m_currentMode; }
+    void setCurrentMode(QWaylandOutputMode *mode);
+
+    QWaylandOutputMode *preferredMode() const { return m_preferredMode; }
+    void setPreferredMode(QWaylandOutputMode *mode);
 
     QRect availableGeometry() const { return m_availableGeometry; }
     void setAvailableGeometry(const QRect &availableGeometry);
@@ -122,7 +129,9 @@ private:
     QString m_manufacturer;
     QString m_model;
     QPoint m_position;
-    QWaylandOutput::Mode m_mode;
+    QWaylandOutputModeMap m_modes;
+    QWaylandOutputMode *m_currentMode;
+    QWaylandOutputMode *m_preferredMode;
     QRect m_availableGeometry;
     QSize m_physicalSize;
     QWaylandOutput::Subpixel m_subpixel;

@@ -300,9 +300,10 @@ QWaylandInputDevice *QWaylandCompositor::inputDeviceFor(QInputEvent *inputEvent)
 
 QWaylandOutput *QWaylandCompositor::createOutput(QWindow *window,
                                                  const QString &manufacturer,
-                                                 const QString &model)
+                                                 const QString &model,
+                                                 const QWaylandOutputModeList &modes)
 {
-    return new QWaylandOutput(this, window, manufacturer, model);
+    return new QWaylandOutput(this, window, manufacturer, model, modes);
 }
 
 QT_END_NAMESPACE

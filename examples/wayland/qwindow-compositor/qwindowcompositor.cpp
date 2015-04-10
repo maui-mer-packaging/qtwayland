@@ -137,7 +137,13 @@ QWindowCompositor::QWindowCompositor(CompositorWindow *window)
 
     setRetainedSelectionEnabled(true);
 
-    createOutput(window, "", "");
+    QWaylandOutputMode *mode = new QWaylandOutputMode("defaultmode",
+                                                      window->size(), 60000);
+    new QWaylandOutput(this, window,
+                       QStringLiteral("QWindowCompositor"),
+                       QStringLiteral("QWindowCompositor"),
+                       QWaylandOutputModeList() << mode);
+
     addDefaultShell();
 }
 

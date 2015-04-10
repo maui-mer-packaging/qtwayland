@@ -55,7 +55,7 @@
 #include <QQuickView>
 
 #include "qwayland-server-share-buffer.h"
-#include <QtCompositor/qwaylandoutput.h>
+#include <QtCompositor/qwaylandquickoutput.h>
 #include <QtCompositor/private/qwlcompositor_p.h>
 #include <QtCompositor/private/qwlserverbufferintegration_p.h>
 
@@ -84,7 +84,14 @@ public:
         setColor(Qt::black);
         create();
         grabWindow();
-        createOutput(this, "", "");
+
+        QWaylandOutputMode *mode = new QWaylandOutputMode("defaultmode",
+                                                          QSize(1024, 768), 60000);
+        new QWaylandQuickOutput(this, this,
+                                QStringLiteral("QmlCompositor"),
+                                QStringLiteral("QmlCompositor"),
+                                QWaylandOutputModeList() << mode);
+
         addDefaultShell();
 
         connect(this, SIGNAL(afterRendering()), this, SLOT(sendCallbacks()));
@@ -242,7 +249,6 @@ int main(int argc, char *argv[])
 
     QmlCompositor compositor;
     compositor.setTitle(QLatin1String("QML Compositor"));
-    compositor.setGeometry(0, 0, 1024, 768);
     compositor.show();
 
     compositor.rootContext()->setContextProperty("compositor", &compositor);

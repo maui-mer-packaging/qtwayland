@@ -6,4 +6,5 @@ contains(CONFIG, wayland-compositor) {
     SUBDIRS += compositor
     SUBDIRS += client
     SUBDIRS += cmake
+    SUBDIRS += output
 }

@@ -41,16 +41,21 @@
 QT_BEGIN_NAMESPACE
 
 class QWaylandQuickCompositor;
+class QWaylandQuickOutputPrivate;
 class QQuickWindow;
 
 class Q_COMPOSITOR_EXPORT QWaylandQuickOutput : public QWaylandOutput
 {
     Q_OBJECT
+    Q_PROPERTY(QQmlListProperty<QWaylandOutputMode> availableModes READ availableModes CONSTANT)
 public:
     QWaylandQuickOutput(QWaylandCompositor *compositor, QQuickWindow *window,
-                        const QString &manufacturer, const QString &model);
+                        const QString &manufacturer, const QString &model,
+                        const QWaylandOutputModeList &list);
 
     QQuickWindow *quickWindow() const;
+
+    QQmlListProperty<QWaylandOutputMode> availableModes();
 
     void update() Q_DECL_OVERRIDE;
 
@@ -58,7 +63,8 @@ public Q_SLOTS:
     void updateStarted();
 
 private:
-    bool m_updateScheduled;
+    Q_DECLARE_PRIVATE(QWaylandQuickOutput)
+    QWaylandQuickOutputPrivate *const d_ptr;
 };
 
 QT_END_NAMESPACE
