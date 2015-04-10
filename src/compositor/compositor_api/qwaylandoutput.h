@@ -43,10 +43,9 @@
 #define QWAYLANDOUTPUT_H
 
 #include <QtCompositor/qwaylandexport.h>
+#include <QtCompositor/QWaylandOutputMode>
 
 #include <QObject>
-#include <QRect>
-#include <QSize>
 
 QT_BEGIN_NAMESPACE
 
@@ -67,7 +66,8 @@ class Q_COMPOSITOR_EXPORT QWaylandOutput : public QObject
     Q_PROPERTY(QString manufacturer READ manufacturer CONSTANT)
     Q_PROPERTY(QString model READ model CONSTANT)
     Q_PROPERTY(QPoint position READ position WRITE setPosition NOTIFY positionChanged)
-    Q_PROPERTY(QWaylandOutput::Mode mode READ mode WRITE setMode NOTIFY modeChanged)
+    Q_PROPERTY(QWaylandOutputMode *currentMode READ currentMode WRITE setCurrentMode NOTIFY currentModeChanged)
+    Q_PROPERTY(QWaylandOutputMode *preferredMode READ preferredMode WRITE setPreferredMode NOTIFY preferredModeChanged)
     Q_PROPERTY(QRect geometry READ geometry NOTIFY geometryChanged)
     Q_PROPERTY(QRect availableGeometry READ availableGeometry WRITE setAvailableGeometry NOTIFY availableGeometryChanged)
     Q_PROPERTY(QSize physicalSize READ physicalSize WRITE setPhysicalSize NOTIFY physicalSizeChanged)
@@ -97,12 +97,6 @@ public:
         TransformFlipped270
     };
 
-    struct Mode
-    {
-        QSize size;
-        int refreshRate;
-    };
-
     QWaylandOutput(QWaylandCompositor *compositor, QWindow *window,
                    const QString &manufacturer, const QString &model);
     ~QWaylandOutput();
@@ -120,11 +114,17 @@ public:
     QPoint position() const;
     void setPosition(const QPoint &pt);
 
-    Mode mode() const;
-    void setMode(const Mode &mode);
+    QWaylandOutputModeList modes() const;
+
+    QWaylandOutputMode *mode(const QString &id) const;
+
+    QWaylandOutputMode *currentMode() const;
+    void setCurrentMode(QWaylandOutputMode *mode);
+
+    QWaylandOutputMode *preferredMode() const;
+    void setPreferredMode(QWaylandOutputMode *mode);
 
     QRect geometry() const;
-    void setGeometry(const QRect &geometry);
 
     QRect availableGeometry() const;
     void setAvailableGeometry(const QRect &availableGeometry);
@@ -150,18 +150,21 @@ public:
 Q_SIGNALS:
     void positionChanged();
     void geometryChanged();
-    void modeChanged();
+    void modesChanged();
+    void currentModeChanged();
+    void preferredModeChanged();
     void availableGeometryChanged();
     void physicalSizeChanged();
     void scaleFactorChanged();
     void subpixelChanged();
     void transformChanged();
 
+protected:
+    void setModes(const QWaylandOutputModeList &list);
+
 private:
     QtWayland::Output *const d_ptr;
 };
-
-Q_DECLARE_METATYPE(QWaylandOutput::Mode)
 
 QT_END_NAMESPACE
 

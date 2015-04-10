@@ -110,6 +110,18 @@ public:
     GLuint texture;
 };
 
+class QWindowOutput : public QWaylandOutput
+{
+public:
+    QWindowOutput(QWindowCompositor *compositor, CompositorWindow *window)
+        : QWaylandOutput(compositor, window, "", "")
+    {
+        QWaylandOutputMode *mode = new QWaylandOutputMode("defaultmode",
+                                                          window->size(), 60000);
+        setModes(QWaylandOutputModeList() << mode);
+    }
+};
+
 QWindowCompositor::QWindowCompositor(CompositorWindow *window)
     : QWaylandCompositor(0, DefaultExtensions | SubSurfaceExtension)
     , m_window(window)
@@ -137,7 +149,7 @@ QWindowCompositor::QWindowCompositor(CompositorWindow *window)
 
     setRetainedSelectionEnabled(true);
 
-    createOutput(window, "", "");
+    new QWindowOutput(this, window);
     addDefaultShell();
 }
 

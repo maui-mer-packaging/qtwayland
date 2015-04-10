@@ -84,10 +84,17 @@ public:
     void setPosition(const QPoint &position);
 
     QRect geometry() const;
-    void setGeometry(const QRect &geometry);
 
-    QWaylandOutput::Mode mode() const { return m_mode; }
-    void setMode(const QWaylandOutput::Mode &mode);
+    QWaylandOutputModeList modes() const;
+    void setModes(const QWaylandOutputModeList &list);
+
+    QWaylandOutputMode *mode(const QString &id) const;
+
+    QString currentModeId() const { return m_currentModeId; }
+    void setCurrentModeId(const QString &id);
+
+    QString preferredModeId() const { return m_preferredModeId; }
+    void setPreferredModeId(const QString &id);
 
     QRect availableGeometry() const { return m_availableGeometry; }
     void setAvailableGeometry(const QRect &availableGeometry);
@@ -122,7 +129,9 @@ private:
     QString m_manufacturer;
     QString m_model;
     QPoint m_position;
-    QWaylandOutput::Mode m_mode;
+    QWaylandOutputModeMap m_modes;
+    QString m_currentModeId;
+    QString m_preferredModeId;
     QRect m_availableGeometry;
     QSize m_physicalSize;
     QWaylandOutput::Subpixel m_subpixel;

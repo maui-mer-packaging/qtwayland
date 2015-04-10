@@ -278,8 +278,16 @@ void QWaylandCompositor::setScreenOrientation(Qt::ScreenOrientation orientation)
 void QWaylandCompositor::setOutputGeometry(const QRect &geometry)
 {
     QWaylandOutput *output = primaryOutput();
-    if (output)
-        output->setGeometry(geometry);
+    if (output) {
+        Q_FOREACH (QWaylandOutputMode *mode, output->modes()) {
+            // Set output geometry only if we have a matching mode
+            if (mode->size() == geometry.size()) {
+                output->setCurrentMode(mode);
+                output->setPosition(geometry.topLeft());
+                break;
+            }
+        }
+    }
 }
 
 QRect QWaylandCompositor::outputGeometry() const
@@ -293,15 +301,23 @@ QRect QWaylandCompositor::outputGeometry() const
 void QWaylandCompositor::setOutputRefreshRate(int rate)
 {
     QWaylandOutput *output = primaryOutput();
-    if (output)
-        output->setMode({output->mode().size, rate});
+    if (output && output->currentMode()) {
+        Q_FOREACH (QWaylandOutputMode *mode, output->modes()) {
+            // Set output refresh rate only if we have a matching mode
+            if (mode->size() == output->currentMode()->size() &&
+                    mode->refreshRate() == rate) {
+                output->setCurrentMode(mode);
+                break;
+            }
+        }
+    }
 }
 
 int QWaylandCompositor::outputRefreshRate() const
 {
     QWaylandOutput *output = primaryOutput();
-    if (output)
-        return output->mode().refreshRate;
+    if (output && output->currentMode())
+        return output->currentMode()->refreshRate();
     return 0;
 }
 #endif

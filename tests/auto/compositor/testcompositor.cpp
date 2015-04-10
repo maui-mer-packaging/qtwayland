@@ -33,9 +33,11 @@
 
 #include "testcompositor.h"
 
-TestCompositor::TestCompositor(QWaylandCompositor::ExtensionFlag flags) : QWaylandCompositor(0, flags)
+TestCompositor::TestCompositor(bool doCreateOutput, QWaylandCompositor::ExtensionFlag flags)
+    : QWaylandCompositor(0, flags)
 {
-    createOutput(0, "", "");
+    if (doCreateOutput)
+        createOutput(0, "", "");
     addDefaultShell();
 }
 

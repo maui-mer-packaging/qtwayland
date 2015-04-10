@@ -1,9 +1,9 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2015 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Contact: http://www.qt.io/licensing/
 **
-** This file is part of the test suite of the Qt Toolkit.
+** This file is part of the plugins of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL21$
 ** Commercial License Usage
@@ -31,17 +31,31 @@
 **
 ****************************************************************************/
 
-#include "qwaylandcompositor.h"
-#include "qwaylandsurface.h"
+#ifndef QWAYLANDQUICKOUTPUT_P_H
+#define QWAYLANDQUICKOUTPUT_P_H
 
-class TestCompositor : public QWaylandCompositor
+#include <QtQml/QQmlListProperty>
+#include <QtCompositor/qwaylandoutputmode.h>
+
+QT_BEGIN_NAMESPACE
+
+class QWaylandQuickOutput;
+
+class QWaylandQuickOutputPrivate
 {
 public:
-    TestCompositor(bool doCreateOutput = true, QWaylandCompositor::ExtensionFlag flags = QWaylandCompositor::DefaultExtensions);
+    QWaylandQuickOutputPrivate(QWaylandQuickOutput *q);
 
-    void surfaceCreated(QWaylandSurface *surface);
-    void surfaceAboutToBeDestroyed(QWaylandSurface *surface);
+    static int modesCount(QQmlListProperty<QWaylandOutputMode> *prop);
+    static QWaylandOutputMode *modesAt(QQmlListProperty<QWaylandOutputMode> *prop,
+                                       int index);
 
-    QList<QWaylandSurface *> surfaces;
+    bool updateScheduled;
+
+protected:
+    QWaylandQuickOutput *q;
 };
 
+QT_END_NAMESPACE
+
+#endif // QWAYLANDQUICKOUTPUT_P_H

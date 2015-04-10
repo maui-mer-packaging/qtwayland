@@ -33,18 +33,41 @@
 ****************************************************************************/
 
 #include "qwaylandquickoutput.h"
+#include "qwaylandquickoutput_p.h"
 #include "qwaylandquickcompositor.h"
 
 QT_BEGIN_NAMESPACE
 
+QWaylandQuickOutputPrivate::QWaylandQuickOutputPrivate(QWaylandQuickOutput *q)
+    : updateScheduled(false)
+    , q(q)
+{
+}
+
+int QWaylandQuickOutputPrivate::modesCount(QQmlListProperty<QWaylandOutputMode> *prop)
+{
+    QWaylandQuickOutput *parent = static_cast<QWaylandQuickOutput *>(prop->object);
+    return parent->modes().count();
+}
+
+QWaylandOutputMode *QWaylandQuickOutputPrivate::modesAt(QQmlListProperty<QWaylandOutputMode> *prop,
+                                   int index)
+{
+    QWaylandQuickOutput *parent = static_cast<QWaylandQuickOutput *>(prop->object);
+    return parent->modes().at(index);
+}
+
+
 QWaylandQuickOutput::QWaylandQuickOutput(QWaylandCompositor *compositor, QQuickWindow *window,
                                          const QString &manufacturer, const QString &model)
     : QWaylandOutput(compositor, window, manufacturer, model)
-    , m_updateScheduled(false)
+    , d_ptr(new QWaylandQuickOutputPrivate(this))
 {
     connect(window, &QQuickWindow::beforeSynchronizing,
             this, &QWaylandQuickOutput::updateStarted,
             Qt::DirectConnection);
+    connect(this, &QWaylandQuickOutput::modesChanged,
+            this, &QWaylandQuickOutput::availableModesChanged);
 }
 
 QQuickWindow *QWaylandQuickOutput::quickWindow() const
@@ -52,17 +75,28 @@ QQuickWindow *QWaylandQuickOutput::quickWindow() const
     return static_cast<QQuickWindow *>(window());
 }
 
+QQmlListProperty<QWaylandOutputMode> QWaylandQuickOutput::availableModes()
+{
+    return QQmlListProperty<QWaylandOutputMode>(this, Q_NULLPTR,
+                                                QWaylandQuickOutputPrivate::modesCount,
+                                                QWaylandQuickOutputPrivate::modesAt);
+}
+
 void QWaylandQuickOutput::update()
 {
-    if (!m_updateScheduled) {
+    Q_D(QWaylandQuickOutput);
+
+    if (!d->updateScheduled) {
         quickWindow()->update();
-        m_updateScheduled = true;
+        d->updateScheduled = true;
     }
 }
 
 void QWaylandQuickOutput::updateStarted()
 {
-    m_updateScheduled = false;
+    Q_D(QWaylandQuickOutput);
+
+    d->updateScheduled = false;
     compositor()->frameStarted();
     compositor()->cleanupGraphicsResources();
 }
