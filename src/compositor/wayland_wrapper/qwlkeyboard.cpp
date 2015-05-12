@@ -184,10 +184,14 @@ QtWaylandServer::wl_keyboard::Resource *Keyboard::focusResource() const
 
 void Keyboard::keyboard_bind_resource(wl_keyboard::Resource *resource)
 {
+    // Set the repeat info, using the default values from weston.ini
+    send_repeat_info(resource->handle, 40, 400); 
+
 #ifndef QT_NO_WAYLAND_XKB
     if (m_context) {
         send_keymap(resource->handle, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                     m_keymap_fd, m_keymap_size);
+
         return;
     }
 #endif
