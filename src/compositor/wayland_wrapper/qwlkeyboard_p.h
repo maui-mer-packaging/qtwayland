@@ -87,6 +87,12 @@ public:
     void setFocus(Surface *surface);
     void setKeymap(const QWaylandKeymap &keymap);
 
+    quint32 repeatRate() const;
+    void setRepeatRate(quint32 rate);
+
+    quint32 repeatDelay() const;
+    void setRepeatDelay(quint32 delay);
+
     void sendKeyModifiers(Resource *resource, uint32_t serial);
     void sendKeyPressEvent(uint code);
     void sendKeyReleaseEvent(uint code);
@@ -146,6 +152,9 @@ private:
     struct xkb_context *m_context;
     struct xkb_state *m_state;
 #endif
+
+    quint32 m_repeatRate;
+    quint32 m_repeatDelay;
 };
 
 } // namespace QtWayland

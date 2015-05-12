@@ -74,6 +74,8 @@ Keyboard::Keyboard(Compositor *compositor, InputDevice *seat)
 #ifndef QT_NO_WAYLAND_XKB
     , m_state(0)
 #endif
+    , m_repeatRate(40)
+    , m_repeatDelay(400)
 {
 #ifndef QT_NO_WAYLAND_XKB
     initXKB();
@@ -148,6 +150,38 @@ void Keyboard::setKeymap(const QWaylandKeymap &keymap)
     m_pendingKeymap = true;
 }
 
+quint32 Keyboard::repeatRate() const
+{
+    return m_repeatRate;
+}
+
+void Keyboard::setRepeatRate(quint32 rate)
+{
+    if (m_repeatRate == rate)
+        return;
+
+    m_repeatRate = rate;
+
+    Q_FOREACH (Resource *resource, resourceMap())
+        send_repeat_info(resource->handle, m_repeatRate, m_repeatDelay);
+}
+
+quint32 Keyboard::repeatDelay() const
+{
+    return m_repeatDelay;
+}
+
+void Keyboard::setRepeatDelay(quint32 delay)
+{
+    if (m_repeatDelay == delay)
+        return;
+
+    m_repeatDelay = delay;
+
+    Q_FOREACH (Resource *resource, resourceMap())
+        send_repeat_info(resource->handle, m_repeatRate, m_repeatDelay);
+}
+
 void Keyboard::focusDestroyed(void *data)
 {
     Q_UNUSED(data)
@@ -185,7 +219,7 @@ QtWaylandServer::wl_keyboard::Resource *Keyboard::focusResource() const
 void Keyboard::keyboard_bind_resource(wl_keyboard::Resource *resource)
 {
     // Send repeat information
-    send_repeat_info(resource->handle, 40, 400);
+    send_repeat_info(resource->handle, m_repeatRate, m_repeatDelay);
 
 #ifndef QT_NO_WAYLAND_XKB
     if (m_context) {

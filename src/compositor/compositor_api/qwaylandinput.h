@@ -114,6 +114,12 @@ public:
 
     void sendFullTouchEvent(QTouchEvent *event);
 
+    quint32 keyboardRepeatRate() const;
+    void setKeyboardRepeatRate(quint32 rate);
+
+    quint32 keyboardRepeatDelay() const;
+    void setKeyboardRepeatDelay(quint32 delay);
+
     QWaylandSurface *keyboardFocus() const;
     bool setKeyboardFocus(QWaylandSurface *surface);
     void setKeymap(const QWaylandKeymap &keymap);

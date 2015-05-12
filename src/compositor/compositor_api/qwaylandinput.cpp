@@ -138,6 +138,32 @@ void QWaylandInputDevice::sendFullKeyEvent(QWaylandSurface *surface, QKeyEvent *
     d->sendFullKeyEvent(surface->handle(), event);
 }
 
+quint32 QWaylandInputDevice::keyboardRepeatRate() const
+{
+    if (handle()->keyboardDevice())
+        return handle()->keyboardDevice()->repeatRate();
+    return 40;
+}
+
+void QWaylandInputDevice::setKeyboardRepeatRate(quint32 rate)
+{
+    if (handle()->keyboardDevice())
+        handle()->keyboardDevice()->setRepeatRate(rate);
+}
+
+quint32 QWaylandInputDevice::keyboardRepeatDelay() const
+{
+    if (handle()->keyboardDevice())
+        return handle()->keyboardDevice()->repeatDelay();
+    return 400;
+}
+
+void QWaylandInputDevice::setKeyboardRepeatDelay(quint32 delay)
+{
+    if (handle()->keyboardDevice())
+        handle()->keyboardDevice()->setRepeatDelay(delay);
+}
+
 QWaylandSurface *QWaylandInputDevice::keyboardFocus() const
 {
     QtWayland::Surface *wlsurface = d->keyboardFocus();
