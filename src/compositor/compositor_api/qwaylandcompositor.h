@@ -127,16 +127,6 @@ public:
 
     const char *socketName() const;
 
-#if QT_DEPRECATED_SINCE(5, 5)
-    void setScreenOrientation(Qt::ScreenOrientation orientation);
-
-    void setOutputGeometry(const QRect &outputGeometry);
-    QRect outputGeometry() const;
-
-    void setOutputRefreshRate(int refreshRate);
-    int outputRefreshRate() const;
-#endif
-
     QWaylandInputDevice *defaultInputDevice() const;
 
     QWaylandInputPanel *inputPanel() const;
