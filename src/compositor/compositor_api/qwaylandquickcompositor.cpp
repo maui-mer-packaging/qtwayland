@@ -78,14 +78,13 @@ QWaylandSurfaceView *QWaylandQuickCompositor::createView(QWaylandSurface *surf)
 
 QWaylandOutput *QWaylandQuickCompositor::createOutput(QWindow *window,
                                                       const QString &manufacturer,
-                                                      const QString &model,
-                                                      const QWaylandOutputModeList &modes)
+                                                      const QString &model)
 {
     QQuickWindow *quickWindow = qobject_cast<QQuickWindow *>(window);
     if (!quickWindow)
         qFatal("%s: couldn't cast QWindow to QQuickWindow. All output windows must "
                "be QQuickWindow derivates when using QWaylandQuickCompositor", Q_FUNC_INFO);
-    return new QWaylandQuickOutput(this, quickWindow, manufacturer, model, modes);
+    return new QWaylandQuickOutput(this, quickWindow, manufacturer, model);
 }
 
 QT_END_NAMESPACE

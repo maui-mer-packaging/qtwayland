@@ -51,8 +51,7 @@ public:
     QWaylandSurfaceView *createView(QWaylandSurface *surf) Q_DECL_OVERRIDE;
     QWaylandOutput *createOutput(QWindow *window,
                                  const QString &manufacturer,
-                                 const QString &model,
-                                 const QWaylandOutputModeList &modes) Q_DECL_OVERRIDE;
+                                 const QString &model) Q_DECL_OVERRIDE;
 };
 
 QT_END_NAMESPACE

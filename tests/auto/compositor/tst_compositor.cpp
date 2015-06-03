@@ -36,7 +36,6 @@
 #include "testkeyboardgrabber.h"
 
 #include "QtCompositor/qwaylandoutput.h"
-#include "QtCompositor/qwaylandoutputmode.h"
 #include "QtCompositor/private/qwlkeyboard_p.h"
 #include "QtCompositor/private/qwlinputdevice_p.h"
 #include "QtCompositor/private/qwlcompositor_p.h"
@@ -191,9 +190,8 @@ void tst_WaylandCompositor::geometry()
 
     QRect geometry(0, 0, 4096, 3072);
 
-    QWaylandOutputModeList modes;
-    modes << new QWaylandOutputMode("defaultMode", geometry.size(), 60000);
-    new QWaylandOutput(&compositor, Q_NULLPTR, "", "", modes);
+    QWaylandOutput *output = new QWaylandOutput(&compositor, Q_NULLPTR, "", "");
+    output->setGeometry(geometry);
 
     MockClient client;
 

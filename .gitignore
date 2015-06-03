@@ -63,5 +63,4 @@ src/plugins/hardwareintegration/*/*/*-client-protocol.h
 src/plugins/hardwareintegration/*/*/*-protocol.c
 tests/auto/client/tst_client
 tests/auto/compositor/tst_compositor
-tests/auto/output/tst_output
 *~

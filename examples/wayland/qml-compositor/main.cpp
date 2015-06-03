@@ -43,7 +43,7 @@
 #include "qwaylandquicksurface.h"
 
 #include <QtCompositor/qwaylandsurfaceitem.h>
-#include <QtCompositor/qwaylandquickoutput.h>
+#include <QtCompositor/qwaylandoutput.h>
 
 #include <QGuiApplication>
 #include <QTimer>
@@ -70,13 +70,7 @@ public:
         setColor(Qt::black);
         winId();
         addDefaultShell();
-
-        QWaylandOutputMode *mode = new QWaylandOutputMode("defaultmode",
-                                                          QSize(1024, 768), 60000);
-        new QWaylandQuickOutput(this, this,
-                                QStringLiteral("QmlCompositor"),
-                                QStringLiteral("QmlCompositor"),
-                                QWaylandOutputModeList() << mode);
+        createOutput(this, "", "");
 
         connect(this, SIGNAL(afterRendering()), this, SLOT(sendCallbacks()));
     }
@@ -154,6 +148,7 @@ int main(int argc, char *argv[])
 
     QmlCompositor compositor;
     compositor.setTitle(QLatin1String("QML Compositor"));
+    compositor.setGeometry(0, 0, 1024, 768);
     compositor.show();
 
     compositor.rootContext()->setContextProperty("compositor", &compositor);

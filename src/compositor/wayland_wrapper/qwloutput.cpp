@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2014-2015 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+** Copyright (C) 2014 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 ** Copyright (C) 2015 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
@@ -106,14 +106,16 @@ Output::Output(Compositor *compositor, QWindow *window)
     , m_window(window)
     , m_output(Q_NULLPTR)
     , m_position(QPoint())
-    , m_currentMode(Q_NULLPTR)
-    , m_preferredMode(Q_NULLPTR)
     , m_availableGeometry(QRect())
     , m_physicalSize(QSize())
     , m_subpixel(QWaylandOutput::SubpixelUnknown)
     , m_transform(QWaylandOutput::TransformNormal)
     , m_scaleFactor(1)
 {
+    m_mode.size = window ? window->size() : QSize();
+    m_mode.refreshRate = 60;
+
+    qRegisterMetaType<QWaylandOutput::Mode>("WaylandOutput::Mode");
 }
 
 void Output::output_bind_resource(Resource *resource)
@@ -124,18 +126,9 @@ void Output::output_bind_resource(Resource *resource)
                   toWlSubpixel(m_subpixel), m_manufacturer, m_model,
                   toWlTransform(m_transform));
 
-    Q_FOREACH (QWaylandOutputMode *mode, m_modes.values()) {
-        int flags = 0;
-
-        if (mode == m_currentMode)
-            flags |= QtWaylandServer::wl_output::mode_current;
-        if (mode == m_preferredMode)
-            flags |= QtWaylandServer::wl_output::mode_preferred;
-
-        send_mode(resource->handle, flags,
-                  mode->size().width(), mode->size().height(),
-                  mode->refreshRate());
-    }
+    send_mode(resource->handle, mode_current | mode_preferred,
+              m_mode.size.width(), m_mode.size.height(),
+              m_mode.refreshRate);
 
     if (resource->version() >= 2) {
         send_scale(resource->handle, m_scaleFactor);
@@ -163,71 +156,44 @@ void Output::setPosition(const QPoint &position)
     sendGeometryInfo();
 }
 
-QRect Output::geometry() const
+void Output::setMode(const QWaylandOutput::Mode &mode)
 {
-    return QRect(m_position, m_currentMode->size());
-}
-
-QWaylandOutputModeList Output::modes() const
-{
-    return m_modes.values();
-}
-
-void Output::setModes(const QWaylandOutputModeList &list)
-{
-    m_modes.clear();
-
-    QSize highestSize;
-    Q_FOREACH (QWaylandOutputMode *mode, list) {
-        // Save the mode
-        m_modes.insert(mode->id(), mode);
-
-        // Preferred mode is the mode with the highest size
-        if (mode->size().width() > highestSize.width() &&
-                mode->size().height() > highestSize.height()) {
-            highestSize = mode->size();
-            m_preferredMode = mode;
-        }
-    }
-
-    // Set current mode to preferred mode by default
-    m_currentMode = m_preferredMode;
-}
-
-QWaylandOutputMode *Output::mode(const QString &id) const
-{
-    if (m_modes.contains(id))
-        return m_modes[id];
-    return Q_NULLPTR;
-}
-
-void Output::setCurrentMode(QWaylandOutputMode *mode)
-{
-    if (m_currentMode == mode)
+    if (m_mode.size == mode.size && m_mode.refreshRate == mode.refreshRate)
         return;
 
-    m_currentMode = mode;
+    m_mode = mode;
 
     Q_FOREACH (Resource *resource, resourceMap().values()) {
         send_mode(resource->handle, mode_current,
-                  mode->size().width(), mode->size().height(),
-                  mode->refreshRate());
+                  m_mode.size.width(), m_mode.size.height(),
+                  m_mode.refreshRate * 1000);
         if (resource->version() >= 2)
             send_done(resource->handle);
     }
 }
 
-void Output::setPreferredMode(QWaylandOutputMode *mode)
+QRect Output::geometry() const
 {
-    if (m_preferredMode == mode)
+    return QRect(m_position, m_mode.size);
+}
+
+void Output::setGeometry(const QRect &geometry)
+{
+    if (m_position == geometry.topLeft() && m_mode.size == geometry.size())
         return;
 
-    m_preferredMode = mode;
+    m_position = geometry.topLeft();
+    m_mode.size = geometry.size();
 
     Q_FOREACH (Resource *resource, resourceMap().values()) {
-        send_mode(resource->handle, mode_preferred,
-                  mode->size().width(), mode->size().height(),
-                  mode->refreshRate());
+        send_geometry(resource->handle,
+                      m_position.x(), m_position.y(),
+                      m_physicalSize.width(), m_physicalSize.height(),
+                      toWlSubpixel(m_subpixel), m_manufacturer, m_model,
+                      toWlTransform(m_transform));
+        send_mode(resource->handle, mode_current,
+                  m_mode.size.width(), m_mode.size.height(),
+                  m_mode.refreshRate * 1000);
         if (resource->version() >= 2)
             send_done(resource->handle);
     }

@@ -31,18 +31,11 @@
 **
 ****************************************************************************/
 
-#include "qwaylandoutput.h"
-
 #include "testcompositor.h"
 
-TestCompositor::TestCompositor(bool doCreateOutput, QWaylandCompositor::ExtensionFlag flags)
-    : QWaylandCompositor(0, flags)
+TestCompositor::TestCompositor(QWaylandCompositor::ExtensionFlag flags) : QWaylandCompositor(0, flags)
 {
-    if (doCreateOutput) {
-        QWaylandOutputModeList modes;
-        modes << new QWaylandOutputMode("defaultMode", QSize(1024, 768), 60000);
-        createOutput(0, "", "", modes);
-    }
+    createOutput(0, "", "");
     addDefaultShell();
 }
 

@@ -42,7 +42,6 @@
 #define QWAYLANDCOMPOSITOR_H
 
 #include <QtCompositor/qwaylandexport.h>
-#include <QtCompositor/QWaylandOutputMode>
 
 #include <QObject>
 #include <QImage>
@@ -157,8 +156,7 @@ protected:
 
     virtual QWaylandOutput *createOutput(QWindow *window,
                                          const QString &manufacturer,
-                                         const QString &model,
-                                         const QWaylandOutputModeList &modes);
+                                         const QString &model);
 
     friend class QtWayland::Compositor;
     QtWayland::Compositor *m_compositor;
